@@ -2,7 +2,9 @@ package com.example.b2b.config;
 
 import com.example.b2b.filter.JwtAuthFilter;
 import com.example.b2b.repository.UserRepository;
+import com.example.b2b.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,11 +27,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
     private final UserRepository userRepository;
+    private final JwtService jwtService;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public JwtAuthFilter jwtAuthFilter(ApplicationContext applicationContext) {
+        return new JwtAuthFilter(jwtService, applicationContext);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, ApplicationContext applicationContext) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
@@ -38,7 +45,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthFilter(applicationContext), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
