@@ -3,6 +3,7 @@ package com.example.b2b.service;
 import com.example.b2b.dto.AuthResponse;
 import com.example.b2b.dto.LoginRequest;
 import com.example.b2b.dto.RegisterRequest;
+import com.example.b2b.exception.AuthorizationException;
 import com.example.b2b.model.User;
 import com.example.b2b.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -21,7 +22,7 @@ public class UserService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new AuthorizationException("Email already in use");
         }
 
         User user = User.builder()
@@ -38,10 +39,10 @@ public class UserService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+                .orElseThrow(() -> new AuthorizationException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+            throw new AuthorizationException("Invalid email or password");
         }
 
         String token = jwtService.generateToken(user);
