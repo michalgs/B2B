@@ -4,11 +4,14 @@ import { Card, CardContent, CardFooter } from '#/components/ui/card'
 import { Field, FieldLabel, FieldDescription } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
+import { CircleAlert } from 'lucide-react'
 import { useState, type ChangeEvent } from 'react'
 
 export const Route = createFileRoute('/register')({
   component: Register,
 });
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Register() {
   const navigate = useNavigate();
@@ -33,14 +36,31 @@ function Register() {
     if (Object.keys(newErrors).length > 0) return;
 
     setIsRequestProcessing(true);
-    // TODO: Implement actual registration logic
-    console.log("Registering user:", { firstName, lastName, email, password });
-    
-    // For now, just simulate success after a delay
-    setTimeout(() => {
-        setIsRequestProcessing(false);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          password
+        }),
+      });
+
+      if (response.ok) {
         navigate({ to: '/login' });
-    }, 1000);
+      } else {
+        const data = await response.json();
+        setErrors({ root: data.message || "Registration failed. Please try again." });
+      }
+    } catch (error) {
+      setErrors({ root: "An error occurred. Please try again later." });
+    } finally {
+      setIsRequestProcessing(false);
+    }
   }
 
   return (
@@ -53,6 +73,11 @@ function Register() {
         </div>
         <Card className='pt-8 mt-8 box-shadow-2xl'>
           <CardContent className='px-4'>
+            {errors.root &&
+              <div className='bg-destructive-secondary h-12 my-2 border-2 border-destructive-primary flex items-center justify-center text-destructive-primary'>
+                <CircleAlert className='mr-2' />
+                <p>{errors.root}</p>
+              </div>}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <Field data-invalid={!!errors.firstName}>
                 <FieldLabel htmlFor='firstName' className='font-bold'>FIRST NAME</FieldLabel>
