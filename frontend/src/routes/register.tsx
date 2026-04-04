@@ -1,0 +1,95 @@
+import Logo from '#/components/Logo'
+import { Button } from '#/components/ui/button'
+import { Card, CardContent, CardFooter } from '#/components/ui/card'
+import { Field, FieldLabel, FieldDescription } from '#/components/ui/field'
+import { Input } from '#/components/ui/input'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
+import { useState, type ChangeEvent } from 'react'
+
+export const Route = createFileRoute('/register')({
+  component: Register,
+});
+
+function Register() {
+  const navigate = useNavigate();
+  
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isRequestProcessing, setIsRequestProcessing] = useState(false);
+
+  const handleRegister = async () => {
+    // Basic scaffolding validation
+    const newErrors: { [key: string]: string } = {};
+    if (!firstName) newErrors.firstName = "First name is required";
+    if (!lastName) newErrors.lastName = "Last name is required";
+    if (!email) newErrors.email = "Email is required";
+    if (!password) newErrors.password = "Password is required";
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    setIsRequestProcessing(true);
+    // TODO: Implement actual registration logic
+    console.log("Registering user:", { firstName, lastName, email, password });
+    
+    // For now, just simulate success after a delay
+    setTimeout(() => {
+        setIsRequestProcessing(false);
+        navigate({ to: '/login' });
+    }, 1000);
+  }
+
+  return (
+    <main className="page-wrap px-4 py-12 flex flex-col pl-10 md:flex md:flex-col md:items-center">
+      <div className='w-full md:w-3/4 lg:w-1/2'>
+        <div className='flex flex-col'>
+          <Logo />
+          <h2 className='mt-4'>Create Account</h2>
+          <p className='font-body font-normal text-md text-base/5 text-secondary mt-2'>Join us to start managing your company's negotiations.</p>
+        </div>
+        <Card className='pt-8 mt-8 box-shadow-2xl'>
+          <CardContent className='px-4'>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <Field data-invalid={!!errors.firstName}>
+                <FieldLabel htmlFor='firstName' className='font-bold'>FIRST NAME</FieldLabel>
+                <Input id='firstName' type='text' placeholder='John' value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                {errors.firstName && <FieldDescription>{errors.firstName}</FieldDescription>}
+                </Field>
+                <Field data-invalid={!!errors.lastName}>
+                <FieldLabel htmlFor='lastName' className='font-bold'>LAST NAME</FieldLabel>
+                <Input id='lastName' type='text' placeholder='Doe' value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                {errors.lastName && <FieldDescription>{errors.lastName}</FieldDescription>}
+                </Field>
+            </div>
+            
+            <Field className='mb-4' data-invalid={!!errors.email}>
+              <FieldLabel htmlFor='email' className='font-bold'>EMAIL</FieldLabel>
+              <Input id='email' type='text' placeholder='name@example.com' value={email} onChange={(e) => setEmail(e.target.value)} />
+              {errors.email && <FieldDescription>{errors.email}</FieldDescription>}
+            </Field>
+            
+            <Field data-invalid={!!errors.password}>
+              <FieldLabel htmlFor='password' className='font-bold'>PASSWORD</FieldLabel>
+              <Input id='password' type='password' placeholder='*********' value={password} onChange={(e) => setPassword(e.target.value)} />
+              {errors.password && <FieldDescription>{errors.password}</FieldDescription>}
+            </Field>
+          </CardContent>
+
+          <Button className='h-12 mt-8 mx-4' onClick={handleRegister} disabled={isRequestProcessing}>CREATE ACCOUNT</Button>
+          
+          <CardFooter className='flex-col'>
+            <h3 className="font-light text-sm mb-2 text-secondary">Already have an account?</h3>
+            <Link to="/login" className="w-full">
+                <Button className='w-full h-12 bg-secondary'>SIGN IN</Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+      <h4 className='text-sm text-center mt-4 text-secondary font-light'>Need help? <span className='text-tertiary'>Contact support</span></h4>
+    </main>
+  )
+}

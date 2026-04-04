@@ -3,7 +3,7 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardFooter } from '#/components/ui/card'
 import { Field, FieldLabel, FieldDescription } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { CircleAlert } from 'lucide-react'
 import { useState, type ChangeEvent } from 'react'
 
@@ -11,88 +11,50 @@ export const Route = createFileRoute('/login')({
   component: Login,
 });
 
-type ValidationResult = { isValid: true } | { isValid: false, error: string };
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// TODO: Pick constants to separate file
-const validateLogin = (login: string): ValidationResult => {
-  if (login.length === 0) {
-    return {
-      isValid: false,
-      error: 'Login field is required.'
-    }
-  }
-  return {
-    isValid: true,
-  };
-}
-
-const validatePassword = (password: string): ValidationResult => {
-  if (password.length === 0) {
-    return {
-      isValid: false,
-      error: 'Password field is required.'
-    }
-  }
-  return {
-    isValid: true,
-  };
-}
 
 function Login() {
   const navigate = useNavigate();
 
-  const [areCredentialsInvalid, setAreCredentialsInvalid] = useState(false);
-
-  const [login, setLogin] = useState("")
-  const [loginError, setLoginError] = useState("");
-
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [passwordError, setPasswordError] = useState("");
-
+  
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isRequestProcessing, setIsRequestProcessing] = useState(false);
 
   const handleLogin = async () => {
-    const loginValidationResult = validateLogin(login);
-    const passwordValidationResult = validatePassword(password);
-    setLoginError(loginValidationResult.isValid ? "" : loginValidationResult.error);
-    setPasswordError(passwordValidationResult.isValid ? "" : passwordValidationResult.error);
+    const newErrors: { [key: string]: string } = {};
+    if (!email) newErrors.email = "Email is required";
+    if (!password) newErrors.password = "Password is required";
 
-    if (!loginValidationResult.isValid || !passwordValidationResult.isValid) {
-      return;
-    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
     setIsRequestProcessing(true);
-    const loginResponse = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: login,
-        password
-      }),
-      credentials: 'include',
-    });
+    try {
+      const loginResponse = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password
+        }),
+        credentials: 'include',
+      });
 
-    if (loginResponse.ok) {
-      navigate({ to: '/dashboard' });
+      if (loginResponse.ok) {
+        navigate({ to: '/dashboard' });
+      } else {
+        setErrors({ root: "Invalid credentials. Please check your email and password." });
+      }
+    } catch (error) {
+      setErrors({ root: "An error occurred. Please try again later." });
+    } finally {
+      setIsRequestProcessing(false);
     }
-    else {
-      setAreCredentialsInvalid(true);
-    }
-
-    setIsRequestProcessing(false);
   }
-
-  const handleLoginInput = (event: ChangeEvent<HTMLInputElement>) => {
-    setLogin(event.target.value);
-  };
-
-  const handlePasswordInput = (event: ChangeEvent<HTMLInputElement>) => {
-    setPassword(event.target.value);
-  };
 
   return (
     <main className="page-wrap px-4 py-12 flex flex-col pl-10 md:flex md:flex-col md:items-center">
@@ -104,27 +66,29 @@ function Login() {
         </div>
         <Card className='pt-8 mt-8 box-shadow-2xl'>
           <CardContent className='px-4'>
-            {areCredentialsInvalid &&
+            {errors.root &&
               <div className='bg-destructive-secondary h-12 my-2 border-2 border-destructive-primary flex items-center justify-center text-destructive-primary'>
                 <CircleAlert className='mr-2' />
-                <p>Invalid credentials. Please check your email and password.</p>
+                <p>{errors.root}</p>
               </div>}
-            <Field className='mb-4' data-invalid={loginError.length > 0}>
+            <Field className='mb-4' data-invalid={!!errors.email}>
               <FieldLabel htmlFor='email' className='font-bold'>EMAIL</FieldLabel>
-              <Input id='email' type='text' placeholder='name@example.com' onChange={handleLoginInput} />
-              {loginError && <FieldDescription>{loginError}</FieldDescription>}
+              <Input id='email' type='text' placeholder='name@example.com' value={email} onChange={(e) => setEmail(e.target.value)} />
+              {errors.email && <FieldDescription>{errors.email}</FieldDescription>}
             </Field>
-            <Field data-invalid={passwordError.length > 0}>
+            <Field data-invalid={!!errors.password}>
               <FieldLabel htmlFor='password' className='font-bold'>PASSWORD</FieldLabel>
-              <Input id='password' type='password' placeholder='*********' onChange={handlePasswordInput} />
-              {passwordError && <FieldDescription>{passwordError}</FieldDescription>}
+              <Input id='password' type='password' placeholder='*********' value={password} onChange={(e) => setPassword(e.target.value)} />
+              {errors.password && <FieldDescription>{errors.password}</FieldDescription>}
             </Field>
           </CardContent>
 
           <Button className='h-12 mt-8 mx-4' onClick={handleLogin} disabled={isRequestProcessing}>SIGN IN TO DASHBOARD</Button>
           <CardFooter className='flex-col'>
             <h3 className="font-light text-sm mb-2 text-secondary">Haven't signed up yet?</h3>
-            <Button className='w-full h-12 bg-secondary'>REGISTER</Button>
+            <Link to="/register" className="w-full">
+              <Button className='w-full h-12 bg-secondary'>REGISTER</Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>
