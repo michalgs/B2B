@@ -74,42 +74,42 @@ function Register() {
         <Card className='pt-8 mt-8 box-shadow-2xl'>
           <CardContent className='px-4'>
             {errors.root &&
-              <div className='bg-destructive-secondary h-12 my-2 border-2 border-destructive-primary flex items-center justify-center text-destructive-primary'>
+              <div data-test="register-error" className='bg-destructive-secondary h-12 my-2 border-2 border-destructive-primary flex items-center justify-center text-destructive-primary'>
                 <CircleAlert className='mr-2' />
                 <p>{errors.root}</p>
               </div>}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <Field data-invalid={!!errors.firstName}>
                 <FieldLabel htmlFor='firstName' className='font-bold'>FIRST NAME</FieldLabel>
-                <Input id='firstName' type='text' placeholder='John' value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                {errors.firstName && <FieldDescription>{errors.firstName}</FieldDescription>}
+                <Input data-test="firstname-input" id='firstName' type='text' placeholder='John' value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                {errors.firstName && <FieldDescription data-test="firstname-error">{errors.firstName}</FieldDescription>}
                 </Field>
                 <Field data-invalid={!!errors.lastName}>
                 <FieldLabel htmlFor='lastName' className='font-bold'>LAST NAME</FieldLabel>
-                <Input id='lastName' type='text' placeholder='Doe' value={lastName} onChange={(e) => setLastName(e.target.value)} />
-                {errors.lastName && <FieldDescription>{errors.lastName}</FieldDescription>}
+                <Input data-test="lastname-input" id='lastName' type='text' placeholder='Doe' value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                {errors.lastName && <FieldDescription data-test="lastname-error">{errors.lastName}</FieldDescription>}
                 </Field>
             </div>
             
             <Field className='mb-4' data-invalid={!!errors.email}>
               <FieldLabel htmlFor='email' className='font-bold'>EMAIL</FieldLabel>
-              <Input id='email' type='text' placeholder='name@example.com' value={email} onChange={(e) => setEmail(e.target.value)} />
-              {errors.email && <FieldDescription>{errors.email}</FieldDescription>}
+              <Input data-test="email-input" id='email' type='text' placeholder='name@example.com' value={email} onChange={(e) => setEmail(e.target.value)} />
+              {errors.email && <FieldDescription data-test="email-error">{errors.email}</FieldDescription>}
             </Field>
             
             <Field data-invalid={!!errors.password}>
               <FieldLabel htmlFor='password' className='font-bold'>PASSWORD</FieldLabel>
-              <Input id='password' type='password' placeholder='*********' value={password} onChange={(e) => setPassword(e.target.value)} />
-              {errors.password && <FieldDescription>{errors.password}</FieldDescription>}
+              <Input data-test="password-input" id='password' type='password' placeholder='*********' value={password} onChange={(e) => setPassword(e.target.value)} />
+              {errors.password && <FieldDescription data-test="password-error">{errors.password}</FieldDescription>}
             </Field>
           </CardContent>
 
-          <Button className='h-12 mt-8 mx-4' onClick={handleRegister} disabled={isRequestProcessing}>CREATE ACCOUNT</Button>
+          <Button data-test="register-submit" className='h-12 mt-8 mx-4' onClick={handleRegister} disabled={isRequestProcessing}>CREATE ACCOUNT</Button>
           
           <CardFooter className='flex-col'>
             <h3 className="font-light text-sm mb-2 text-secondary">Already have an account?</h3>
             <Link to="/login" className="w-full">
-                <Button className='w-full h-12 bg-secondary'>SIGN IN</Button>
+                <Button data-test="login-link" className='w-full h-12 bg-secondary'>SIGN IN</Button>
             </Link>
           </CardFooter>
         </Card>

@@ -43,9 +43,6 @@ public class SecurityConfig {
         return new JwtAuthFilter(jwtService, applicationContext);
     }
 
-import org.springframework.http.HttpStatus;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-...
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ApplicationContext applicationContext) throws Exception {
         return http

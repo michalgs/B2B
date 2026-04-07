@@ -5,7 +5,7 @@ import { Field, FieldLabel, FieldDescription } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { CircleAlert } from 'lucide-react'
-import { useState, type ChangeEvent } from 'react'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/login')({
   component: Login,
@@ -18,7 +18,7 @@ function Login() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isRequestProcessing, setIsRequestProcessing] = useState(false);
 
@@ -67,27 +67,27 @@ function Login() {
         <Card className='pt-8 mt-8 box-shadow-2xl'>
           <CardContent className='px-4'>
             {errors.root &&
-              <div className='bg-destructive-secondary h-12 my-2 border-2 border-destructive-primary flex items-center justify-center text-destructive-primary'>
+              <div data-test="auth-error" className='bg-destructive-secondary h-12 my-2 border-2 border-destructive-primary flex items-center justify-center text-destructive-primary'>
                 <CircleAlert className='mr-2' />
                 <p>{errors.root}</p>
               </div>}
             <Field className='mb-4' data-invalid={!!errors.email}>
               <FieldLabel htmlFor='email' className='font-bold'>EMAIL</FieldLabel>
-              <Input id='email' type='text' placeholder='name@example.com' value={email} onChange={(e) => setEmail(e.target.value)} />
-              {errors.email && <FieldDescription>{errors.email}</FieldDescription>}
+              <Input data-test="email-input" id='email' type='text' placeholder='name@example.com' value={email} onChange={(e) => setEmail(e.target.value)} />
+              {errors.email && <FieldDescription data-test="email-error">{errors.email}</FieldDescription>}
             </Field>
             <Field data-invalid={!!errors.password}>
               <FieldLabel htmlFor='password' className='font-bold'>PASSWORD</FieldLabel>
-              <Input id='password' type='password' placeholder='*********' value={password} onChange={(e) => setPassword(e.target.value)} />
-              {errors.password && <FieldDescription>{errors.password}</FieldDescription>}
+              <Input data-test="password-input" id='password' type='password' placeholder='*********' value={password} onChange={(e) => setPassword(e.target.value)} />
+              {errors.password && <FieldDescription data-test="password-error">{errors.password}</FieldDescription>}
             </Field>
           </CardContent>
 
-          <Button className='h-12 mt-8 mx-4' onClick={handleLogin} disabled={isRequestProcessing}>SIGN IN TO DASHBOARD</Button>
+          <Button data-test="login-submit" className='h-12 mt-8 mx-4' onClick={handleLogin} disabled={isRequestProcessing}>SIGN IN TO DASHBOARD</Button>
           <CardFooter className='flex-col'>
             <h3 className="font-light text-sm mb-2 text-secondary">Haven't signed up yet?</h3>
             <Link to="/register" className="w-full">
-              <Button className='w-full h-12 bg-secondary'>REGISTER</Button>
+              <Button data-test="register-link" className='w-full h-12 bg-secondary'>REGISTER</Button>
             </Link>
           </CardFooter>
         </Card>
