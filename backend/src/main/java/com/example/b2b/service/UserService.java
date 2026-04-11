@@ -4,16 +4,19 @@ import com.example.b2b.dto.AuthResponse;
 import com.example.b2b.dto.LoginRequest;
 import com.example.b2b.dto.RegisterRequest;
 import com.example.b2b.exception.AuthorizationException;
+import com.example.b2b.exception.RegistrationConflictException;
 import com.example.b2b.model.User;
 import com.example.b2b.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -22,7 +25,8 @@ public class UserService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new AuthorizationException("Email already in use");
+            log.warn("Registration failed: email {} already in use", request.getEmail());
+            throw new RegistrationConflictException("Email already in use");
         }
 
         User user = User.builder()
@@ -39,9 +43,13 @@ public class UserService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AuthorizationException("Invalid email or password"));
+                .orElseThrow(() -> {
+                    log.warn("Login failed: user with email {} not found", request.getEmail());
+                    return new AuthorizationException("Invalid email or password");
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            log.warn("Login failed: incorrect password for user {}", request.getEmail());
             throw new AuthorizationException("Invalid email or password");
         }
 
