@@ -11,7 +11,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
-
+  cypress:
+    shm_size: '2gb' 
+    
   backend:
     build:
       context: ./backend
