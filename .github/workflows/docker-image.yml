@@ -1,4 +1,4 @@
-name: Docker and Cypress CI
+name: CI Pipeline
 
 on:
   push:
@@ -7,37 +7,29 @@ on:
     branches: [ "main" ]
 
 jobs:
-
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker compose
-      run: docker compose up -d
-
-  e2e-tests:
-    needs: build 
+  test-and-build:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Start application using Docker Compose
-
+      - name: Build and Start Containers
         run: docker compose up -d --build
 
       - name: Run Cypress Tests
         uses: cypress-io/github-action@v6
+        env:
+          CYPRESS_BASE_URL: http://localhost:3000
         with:
-          working-directory: frontend 
-          
-          wait-on: 'http://localhost:3000' 
-          
-          wait-on-timeout: 120 
+          working-directory: frontend
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
 
-      - name: Stop containers and clean up
+      - name: Show Backend Logs on Failure
+        if: failure()
+        run: docker compose logs backend
+
+      - name: Cleanup
         if: always()
         run: docker compose down
