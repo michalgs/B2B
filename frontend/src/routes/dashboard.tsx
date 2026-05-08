@@ -75,6 +75,7 @@ function Dashboard() {
   const { user, negotiations, companies } = Route.useRouteContext();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedNegotiation, setSelectedNegotiation] = useState<Negotiation | null>(null);
   
   // Form states
   const [recipientCompanyUuid, setRecipientCompanyUuid] = useState("");
@@ -90,6 +91,32 @@ function Dashboard() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString();
+  };
+
+  const handleUpdateStatus = async (uuid: string, status: string) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/contracts/${uuid}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        setSelectedNegotiation(null);
+        navigate({ to: '/dashboard', replace: true });
+      } else {
+        const data = await response.json();
+        setError(data.message || "Failed to update status.");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCreateNegotiation = async (e: React.FormEvent) => {
@@ -164,7 +191,10 @@ function Dashboard() {
                 ) : (
                   negotiations.map((negotiation, index) => (
                     <div key={negotiation.uuid}>
-                      <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                      <div 
+                        className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedNegotiation(negotiation)}
+                      >
                         <div className="flex flex-col gap-1">
                           <span className="font-semibold text-base">
                             {user.company?.name === negotiation.senderCompanyName 
@@ -207,6 +237,7 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* New Negotiation Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-2xl bg-background shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -302,6 +333,57 @@ function Dashboard() {
                 </Button>
               </CardFooter>
             </form>
+          </Card>
+        </div>
+      )}
+
+      {/* Detail / Action Modal */}
+      {selectedNegotiation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg bg-background shadow-2xl overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Negotiation Details</CardTitle>
+              <CardDescription>Review the offer from {selectedNegotiation.senderCompanyName}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 px-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-bold text-muted-foreground">STATUS</h4>
+                  <p className="font-medium">{selectedNegotiation.status}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-muted-foreground">SENDER</h4>
+                  <p className="font-medium">{selectedNegotiation.senderCompanyName}</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-muted-foreground">OFFERING</h4>
+                <p className="font-medium">{selectedNegotiation.initialOffering}</p>
+              </div>
+              {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+            </CardContent>
+            <CardFooter className="justify-end gap-3 mt-4 border-t pt-4">
+              <Button variant="ghost" type="button" onClick={() => setSelectedNegotiation(null)}>Close</Button>
+              
+              {selectedNegotiation.status === 'INVITED' && user.company?.name === selectedNegotiation.recipientCompanyName && (
+                <>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => handleUpdateStatus(selectedNegotiation.uuid, 'REJECTED')}
+                    disabled={isSubmitting}
+                  >
+                    Reject Offer
+                  </Button>
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700" 
+                    onClick={() => handleUpdateStatus(selectedNegotiation.uuid, 'IN_PROGRESS')}
+                    disabled={isSubmitting}
+                  >
+                    Accept Offer
+                  </Button>
+                </>
+              )}
+            </CardFooter>
           </Card>
         </div>
       )}

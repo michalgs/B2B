@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/contracts")
@@ -32,5 +33,12 @@ public class ContractController {
         ContractResponse response = contractService.createContract(request);
         System.out.println("DEBUG: Created contract with status: " + response.getStatus());
         return response;
+    }
+
+    @PatchMapping("/{uuid}/status")
+    public ContractResponse updateStatus(@PathVariable UUID uuid, @RequestBody Map<String, String> statusUpdate) {
+        String statusStr = statusUpdate.get("status");
+        com.example.b2b.model.ContractStatus status = com.example.b2b.model.ContractStatus.valueOf(statusStr);
+        return contractService.updateContractStatus(uuid, status);
     }
 }
