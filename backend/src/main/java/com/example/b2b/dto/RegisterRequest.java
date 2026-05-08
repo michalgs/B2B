@@ -21,4 +21,14 @@ public class RegisterRequest {
     @NotBlank
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
+
+    @NotBlank
+    private String companyName;
+
+    @NotBlank
+    private String companyAddress;
+
+    @NotBlank
+    @Size(min = 10, max = 10, message = "NIP must be 10 digits")
+    private String nip;
 }

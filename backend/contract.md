@@ -90,15 +90,10 @@ All endpoints are prefixed with `/api/v1`. This document contains all necessary 
 {
   "content": [{
     "uuid": "CONTRACT_UUID",
-    "status": "NEGOTIATING",
+    "status": "IN_PROGRESS",
     "senderCompanyName": "Acme Corp",
     "recipientCompanyName": "Global Soft",
-    "latestShard": {
-      "title": "Software Dev",
-      "price": 15000.00,
-      "currency": "USD",
-      "createdAt": "2026-05-07T12:00:00Z"
-    },
+    "initialOffering": "",
     "updatedAt": "2026-05-07T12:00:00Z"
   }]
 }

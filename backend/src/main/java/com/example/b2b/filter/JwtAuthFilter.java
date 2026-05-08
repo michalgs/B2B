@@ -46,22 +46,32 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         if (token == null) {
+            System.out.println("DEBUG: No token found in request to " + request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         }
 
-        String username = jwtService.extractUsername(token);
+        try {
+            String username = jwtService.extractUsername(token);
+            System.out.println("DEBUG: Extracted username: " + username);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetailsService userDetailsService = applicationContext.getBean(UserDetailsService.class);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetailsService userDetailsService = applicationContext.getBean(UserDetailsService.class);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtService.isTokenValid(token, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (jwtService.isTokenValid(token, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("DEBUG: Authentication successful for " + username);
+                } else {
+                    System.out.println("DEBUG: Token invalid for " + username);
+                }
             }
+        } catch (Exception e) {
+            System.out.println("DEBUG: Exception in JwtAuthFilter: " + e.getMessage());
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
