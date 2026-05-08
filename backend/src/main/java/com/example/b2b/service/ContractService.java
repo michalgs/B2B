@@ -60,7 +60,7 @@ public class ContractService {
                 .price(request.getPrice())
                 .currency(request.getCurrency())
                 .deadline(request.getDeadline())
-                .status(ContractStatus.IN_PROGRESS)
+                .status(ContractStatus.INVITED)
                 .build();
 
         Contract savedContract = contractRepository.save(contract);

@@ -179,8 +179,8 @@ function Dashboard() {
                             "text-xs px-2 py-0.5 rounded-full border",
                             negotiation.status === "ACCEPTED" ? "bg-green-100 text-green-700 border-green-200" :
                             negotiation.status === "REJECTED" ? "bg-red-100 text-red-700 border-red-200" :
-                            negotiation.status === "IN_PROGRESS" ? "bg-blue-100 text-blue-700 border-blue-200" :
-                            "bg-yellow-100 text-yellow-700 border-yellow-200"
+                            negotiation.status === "INVITED" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                            "bg-blue-100 text-blue-700 border-blue-200"
                           )}>
                             {negotiation.status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
                           </span>

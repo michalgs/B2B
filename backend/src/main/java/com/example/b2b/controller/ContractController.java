@@ -20,13 +20,17 @@ public class ContractController {
 
     @GetMapping
     public Map<String, List<ContractResponse>> getContracts() {
-        // contract.md specifies response as { "content": [...] }
-        return Map.of("content", contractService.getUserContracts());
+        List<ContractResponse> contracts = contractService.getUserContracts();
+        System.out.println("DEBUG: Returning " + contracts.size() + " contracts. First status: " + 
+            (contracts.isEmpty() ? "none" : contracts.get(0).getStatus()));
+        return Map.of("content", contracts);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ContractResponse createContract(@Valid @RequestBody ContractCreateRequest request) {
-        return contractService.createContract(request);
+        ContractResponse response = contractService.createContract(request);
+        System.out.println("DEBUG: Created contract with status: " + response.getStatus());
+        return response;
     }
 }
