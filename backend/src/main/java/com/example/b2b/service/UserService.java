@@ -46,6 +46,8 @@ public class UserService {
                 .nip(request.getNip())
                 .build();
 
+        company = companyRepository.save(company);
+
         User user = User.builder()
                 .uuid(UUID.randomUUID())
                 .firstName(request.getFirstName())
