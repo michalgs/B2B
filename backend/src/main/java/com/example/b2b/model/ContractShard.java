@@ -6,11 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -18,8 +16,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "contracts")
-public class Contract {
+@Table(name = "contract_shards")
+public class ContractShard {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,30 +27,29 @@ public class Contract {
     private UUID uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
-    private Company sender;
+    @JoinColumn(name = "contract_id", nullable = false)
+    private Contract contract;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipient_id", nullable = false)
-    private Company recipient;
+    @JoinColumn(name = "created_by_id", nullable = false)
+    private Company createdBy;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ContractStatus status;
+    private String title;
 
-    @Version
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String description;
+
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal price;
+
+    @Column(nullable = false, length = 3)
+    private String currency;
+
     @Column(nullable = false)
-    private Long version;
-
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<ContractShard> shards = new ArrayList<>();
+    private LocalDateTime deadline;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 }

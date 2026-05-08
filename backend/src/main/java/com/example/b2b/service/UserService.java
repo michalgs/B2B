@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -38,12 +40,14 @@ public class UserService {
         }
 
         Company company = Company.builder()
+                .uuid(UUID.randomUUID())
                 .name(request.getCompanyName())
                 .address(request.getCompanyAddress())
                 .nip(request.getNip())
                 .build();
 
         User user = User.builder()
+                .uuid(UUID.randomUUID())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())

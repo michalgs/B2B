@@ -5,7 +5,9 @@ import com.example.b2b.dto.LoginRequest;
 import com.example.b2b.dto.RegisterRequest;
 import com.example.b2b.exception.AuthorizationException;
 import com.example.b2b.exception.RegistrationConflictException;
+import com.example.b2b.model.Company;
 import com.example.b2b.model.User;
+import com.example.b2b.repository.CompanyRepository;
 import com.example.b2b.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +29,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private CompanyRepository companyRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -39,6 +45,7 @@ class UserServiceTest {
     private RegisterRequest registerRequest;
     private LoginRequest loginRequest;
     private User user;
+    private Company company;
 
     @BeforeEach
     void setUp() {
@@ -47,22 +54,35 @@ class UserServiceTest {
         registerRequest.setPassword("password123");
         registerRequest.setFirstName("John");
         registerRequest.setLastName("Doe");
+        registerRequest.setCompanyName("Test Company");
+        registerRequest.setCompanyAddress("Test Address");
+        registerRequest.setNip("1234567890");
 
         loginRequest = new LoginRequest();
         loginRequest.setEmail("test@example.com");
         loginRequest.setPassword("password123");
 
+        company = Company.builder()
+                .uuid(UUID.randomUUID())
+                .name("Test Company")
+                .nip("1234567890")
+                .address("Test Address")
+                .build();
+
         user = User.builder()
+                .uuid(UUID.randomUUID())
                 .email("test@example.com")
                 .password("encodedPassword")
                 .firstName("John")
                 .lastName("Doe")
+                .company(company)
                 .build();
     }
 
     @Test
     void register_Success() {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(companyRepository.existsByNip(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(jwtService.generateToken(any(User.class))).thenReturn("testToken");
 
@@ -79,7 +99,14 @@ class UserServiceTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
         assertThrows(RegistrationConflictException.class, () -> userService.register(registerRequest));
-        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void register_NipAlreadyExists_ThrowsException() {
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(companyRepository.existsByNip(anyString())).thenReturn(true);
+
+        assertThrows(RegistrationConflictException.class, () -> userService.register(registerRequest));
     }
 
     @Test

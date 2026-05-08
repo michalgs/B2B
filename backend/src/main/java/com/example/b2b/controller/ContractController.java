@@ -2,10 +2,13 @@ package com.example.b2b.controller;
 
 import com.example.b2b.dto.ContractCreateRequest;
 import com.example.b2b.dto.ContractResponse;
+import com.example.b2b.model.ContractStatus;
+import com.example.b2b.model.User;
 import com.example.b2b.service.ContractService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,25 +23,20 @@ public class ContractController {
     private final ContractService contractService;
 
     @GetMapping
-    public Map<String, List<ContractResponse>> getContracts() {
-        List<ContractResponse> contracts = contractService.getUserContracts();
-        System.out.println("DEBUG: Returning " + contracts.size() + " contracts. First status: " + 
-            (contracts.isEmpty() ? "none" : contracts.get(0).getStatus()));
-        return Map.of("content", contracts);
+    public Map<String, List<ContractResponse>> getContracts(@AuthenticationPrincipal User user) {
+        return Map.of("content", contractService.getUserContracts(user));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ContractResponse createContract(@Valid @RequestBody ContractCreateRequest request) {
-        ContractResponse response = contractService.createContract(request);
-        System.out.println("DEBUG: Created contract with status: " + response.getStatus());
-        return response;
+    public ContractResponse createContract(@AuthenticationPrincipal User user, @Valid @RequestBody ContractCreateRequest request) {
+        return contractService.createContract(request, user);
     }
 
     @PatchMapping("/{uuid}/status")
-    public ContractResponse updateStatus(@PathVariable UUID uuid, @RequestBody Map<String, String> statusUpdate) {
+    public ContractResponse updateStatus(@AuthenticationPrincipal User user, @PathVariable UUID uuid, @RequestBody Map<String, String> statusUpdate) {
         String statusStr = statusUpdate.get("status");
-        com.example.b2b.model.ContractStatus status = com.example.b2b.model.ContractStatus.valueOf(statusStr);
-        return contractService.updateContractStatus(uuid, status);
+        ContractStatus status = ContractStatus.valueOf(statusStr);
+        return contractService.updateContractStatus(uuid, status, user);
     }
 }

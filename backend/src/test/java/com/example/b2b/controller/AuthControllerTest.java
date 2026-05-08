@@ -49,14 +49,23 @@ class AuthControllerTest {
         request.setPassword("password123");
         request.setFirstName("John");
         request.setLastName("Doe");
+        request.setCompanyName("Acme");
+        request.setCompanyAddress("Street");
+        request.setNip("1234567890");
 
-        AuthResponse response = new AuthResponse("token", "test@example.com", "John", "Doe");
+        AuthResponse response = AuthResponse.builder()
+                .token("token")
+                .email("test@example.com")
+                .firstName("John")
+                .lastName("Doe")
+                .build();
         when(userService.register(any(RegisterRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
+                .andExpect(cookie().exists("auth_token"))
                 .andExpect(jsonPath("$.token").value("token"))
                 .andExpect(jsonPath("$.email").value("test@example.com"));
     }
@@ -68,15 +77,18 @@ class AuthControllerTest {
         request.setPassword("password123");
         request.setFirstName("John");
         request.setLastName("Doe");
+        request.setCompanyName("Acme");
+        request.setCompanyAddress("Street");
+        request.setNip("1234567890");
 
         when(userService.register(any(RegisterRequest.class)))
-                .thenThrow(new RegistrationConflictException("Email already in use"));
+                .thenThrow(new RegistrationConflictException("Company or User already registered"));
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Email already in use"));
+                .andExpect(jsonPath("$.message").value("Company or User already registered"));
     }
 
     @Test
@@ -84,7 +96,7 @@ class AuthControllerTest {
         RegisterRequest request = new RegisterRequest();
         // Missing fields
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -97,10 +109,15 @@ class AuthControllerTest {
         request.setEmail("test@example.com");
         request.setPassword("password123");
 
-        AuthResponse response = new AuthResponse("token", "test@example.com", "John", "Doe");
+        AuthResponse response = AuthResponse.builder()
+                .token("token")
+                .email("test@example.com")
+                .firstName("John")
+                .lastName("Doe")
+                .build();
         when(userService.login(any(LoginRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -117,7 +134,7 @@ class AuthControllerTest {
         when(userService.login(any(LoginRequest.class)))
                 .thenThrow(new AuthorizationException("Invalid email or password"));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
