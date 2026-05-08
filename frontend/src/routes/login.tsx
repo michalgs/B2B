@@ -32,7 +32,7 @@ function Login() {
 
     setIsRequestProcessing(true);
     try {
-      const loginResponse = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const loginResponse = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -5,7 +5,9 @@ import com.example.b2b.dto.LoginRequest;
 import com.example.b2b.dto.RegisterRequest;
 import com.example.b2b.exception.AuthorizationException;
 import com.example.b2b.exception.RegistrationConflictException;
+import com.example.b2b.model.Company;
 import com.example.b2b.model.User;
+import com.example.b2b.repository.CompanyRepository;
 import com.example.b2b.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,25 +22,43 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             log.warn("Registration failed: email {} already in use", request.getEmail());
-            throw new RegistrationConflictException("Email already in use");
+            throw new RegistrationConflictException("Company or User already registered");
         }
+
+        if (companyRepository.existsByNip(request.getNip())) {
+            log.warn("Registration failed: NIP {} already in use", request.getNip());
+            throw new RegistrationConflictException("Company or User already registered");
+        }
+
+        Company company = Company.builder()
+                .name(request.getCompanyName())
+                .address(request.getCompanyAddress())
+                .nip(request.getNip())
+                .build();
 
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .company(company)
                 .build();
 
         userRepository.save(user);
         String token = jwtService.generateToken(user);
-        return new AuthResponse(token, user.getEmail(), user.getFirstName(), user.getLastName());
+        return AuthResponse.builder()
+                .token(token)
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .build();
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -54,6 +74,11 @@ public class UserService {
         }
 
         String token = jwtService.generateToken(user);
-        return new AuthResponse(token, user.getEmail(), user.getFirstName(), user.getLastName());
+        return AuthResponse.builder()
+                .token(token)
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .build();
     }
 }

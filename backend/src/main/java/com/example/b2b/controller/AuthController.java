@@ -15,30 +15,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(userService.register(request));
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response) {
+        AuthResponse authResponse = userService.register(request);
+        addAuthCookie(response, authResponse.getToken());
+        return ResponseEntity.ok(authResponse);
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-        var loginResponse = userService.login(request);
-
-        var cookie = new Cookie("auth_token", loginResponse.getToken());
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(60 * 60);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setAttribute("SameSite", "None");
-
-        response.addCookie(cookie);
-
+        AuthResponse loginResponse = userService.login(request);
+        addAuthCookie(response, loginResponse.getToken());
         return ResponseEntity.ok(loginResponse);
+    }
+
+    private void addAuthCookie(HttpServletResponse response, String token) {
+        Cookie cookie = new Cookie("auth_token", token);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // Reverted to secure as requested
+        cookie.setPath("/");
+        cookie.setMaxAge(24 * 60 * 60); // 24 hours
+        cookie.setAttribute("SameSite", "None"); // Required for Secure=true in cross-origin
+        response.addCookie(cookie);
     }
 }

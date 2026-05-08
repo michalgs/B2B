@@ -20,6 +20,9 @@ function Register() {
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [companyName, setCompanyName] = useState("")
+  const [companyAddress, setCompanyAddress] = useState("")
+  const [nip, setNip] = useState("")
   
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isRequestProcessing, setIsRequestProcessing] = useState(false);
@@ -31,13 +34,17 @@ function Register() {
     if (!lastName) newErrors.lastName = "Last name is required";
     if (!email) newErrors.email = "Email is required";
     if (!password) newErrors.password = "Password is required";
+    if (!companyName) newErrors.companyName = "Company name is required";
+    if (!companyAddress) newErrors.companyAddress = "Company address is required";
+    if (!nip) newErrors.nip = "NIP is required";
+    else if (!/^\d{10}$/.test(nip)) newErrors.nip = "NIP must be 10 digits";
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
     setIsRequestProcessing(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,8 +53,12 @@ function Register() {
           firstName,
           lastName,
           email,
-          password
+          password,
+          companyName,
+          companyAddress,
+          nip
         }),
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -96,6 +107,25 @@ function Register() {
               <Input data-test="email-input" id='email' type='text' placeholder='name@example.com' value={email} onChange={(e) => setEmail(e.target.value)} />
               {errors.email && <FieldDescription data-test="email-error">{errors.email}</FieldDescription>}
             </Field>
+
+            <Field className='mb-4' data-invalid={!!errors.companyName}>
+              <FieldLabel htmlFor='companyName' className='font-bold'>COMPANY NAME</FieldLabel>
+              <Input data-test="company-name-input" id='companyName' type='text' placeholder='Acme Corp' value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+              {errors.companyName && <FieldDescription data-test="company-name-error">{errors.companyName}</FieldDescription>}
+            </Field>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <Field data-invalid={!!errors.nip}>
+                <FieldLabel htmlFor='nip' className='font-bold'>NIP</FieldLabel>
+                <Input data-test="nip-input" id='nip' type='text' placeholder='1234567890' value={nip} onChange={(e) => setNip(e.target.value)} />
+                {errors.nip && <FieldDescription data-test="nip-error">{errors.nip}</FieldDescription>}
+                </Field>
+                <Field data-invalid={!!errors.companyAddress}>
+                <FieldLabel htmlFor='companyAddress' className='font-bold'>COMPANY ADDRESS</FieldLabel>
+                <Input data-test="company-address-input" id='companyAddress' type='text' placeholder='123 Business St' value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} />
+                {errors.companyAddress && <FieldDescription data-test="company-address-error">{errors.companyAddress}</FieldDescription>}
+                </Field>
+            </div>
             
             <Field data-invalid={!!errors.password}>
               <FieldLabel htmlFor='password' className='font-bold'>PASSWORD</FieldLabel>
