@@ -120,7 +120,13 @@ All endpoints are prefixed with `/api/v1`. This document contains all necessary 
 **Description**: Scenario #1-3 Counteroffers.
 **Request Body**:
 ```json
-{ "title": "Updated Title", "description": "New terms", "price": 4500.00, "currency": "USD", "deadline": "2026-11-30T00:00:00Z" }
+{ 
+  "title": "Updated Title",
+  "description": "New terms",
+  "price": 4500.00,
+  "currency": "USD",
+  "deadline": "2026-11-30T00:00:00Z"
+}
 ```
 **Responses**:
 - `201 Created`: Success.

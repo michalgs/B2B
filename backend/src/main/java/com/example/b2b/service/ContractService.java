@@ -2,16 +2,12 @@ package com.example.b2b.service;
 
 import com.example.b2b.dto.ContractCreateRequest;
 import com.example.b2b.dto.ContractResponse;
-import com.example.b2b.model.Company;
-import com.example.b2b.model.Contract;
-import com.example.b2b.model.ContractStatus;
-import com.example.b2b.model.User;
+import com.example.b2b.mapper.ContractMapper;
+import com.example.b2b.model.*;
 import com.example.b2b.repository.CompanyRepository;
 import com.example.b2b.repository.ContractRepository;
-import com.example.b2b.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,22 +17,22 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ContractService {
 
     private final ContractRepository contractRepository;
     private final CompanyRepository companyRepository;
-    private final UserRepository userRepository;
+    private final ContractMapper contractMapper;
 
     @Transactional
-    public ContractResponse updateContractStatus(UUID uuid, ContractStatus newStatus) {
-        User user = getCurrentUser();
+    public ContractResponse updateContractStatus(UUID uuid, ContractStatus newStatus, User user) {
         Company company = user.getCompany();
 
-        Contract contract = contractRepository.findById(uuid)
+        Contract contract = contractRepository.findByUuid(uuid)
                 .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
 
-        // Only the recipient can accept or reject
-        if (!contract.getRecipientCompany().getUuid().equals(company.getUuid())) {
+        // Only the recipient can accept or reject in this simplified status flow
+        if (!contract.getRecipient().getUuid().equals(company.getUuid())) {
             throw new IllegalStateException("Only the recipient can change the contract status");
         }
 
@@ -45,60 +41,57 @@ public class ContractService {
         }
 
         contract.setStatus(newStatus);
-        Contract savedContract = contractRepository.save(contract);
+        contract = contractRepository.save(contract);
+        log.info("Contract {} status updated to {} by company {}", contract.getUuid(), newStatus, company.getUuid());
 
-        return mapToResponse(savedContract);
+        return contractMapper.toResponse(contract);
     }
 
-    private ContractResponse mapToResponse(Contract c) {
-        return ContractResponse.builder()
-                .uuid(c.getUuid())
-                .status(c.getStatus())
-                .senderCompanyName(c.getSenderCompany().getName())
-                .recipientCompanyName(c.getRecipientCompany().getName())
-                .initialOffering(c.getTitle() + " ($" + c.getPrice() + ")")
-                .updatedAt(c.getUpdatedAt())
-                .build();
-    }
-
-    public List<ContractResponse> getUserContracts() {
-        User user = getCurrentUser();
+    @Transactional(readOnly = true)
+    public List<ContractResponse> getUserContracts(User user) {
         Company company = user.getCompany();
+        if (company == null) {
+            return List.of();
+        }
 
-        List<Contract> contracts = contractRepository.findBySenderCompanyOrRecipientCompanyOrderByUpdatedAtDesc(company, company);
-
-        return contracts.stream()
-                .map(this::mapToResponse)
+        return contractRepository.findAllByCompany(company).stream()
+                .map(contractMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public ContractResponse createContract(ContractCreateRequest request) {
-        User user = getCurrentUser();
+    public ContractResponse createContract(ContractCreateRequest request, User user) {
         Company senderCompany = user.getCompany();
         
-        Company recipientCompany = companyRepository.findById(request.getRecipientCompanyUuid())
+        Company recipientCompany = companyRepository.findByUuid(request.getRecipientCompanyUuid())
                 .orElseThrow(() -> new IllegalArgumentException("Recipient company not found"));
 
+        if (senderCompany.getUuid().equals(request.getRecipientCompanyUuid())) {
+            throw new IllegalArgumentException("Cannot create contract with your own company");
+        }
+
         Contract contract = Contract.builder()
-                .senderCompany(senderCompany)
-                .recipientCompany(recipientCompany)
+                .uuid(UUID.randomUUID())
+                .sender(senderCompany)
+                .recipient(recipientCompany)
+                .status(ContractStatus.INVITED)
+                .build();
+
+        ContractShard shard = ContractShard.builder()
+                .uuid(UUID.randomUUID())
+                .contract(contract)
+                .createdBy(senderCompany)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .price(request.getPrice())
                 .currency(request.getCurrency())
                 .deadline(request.getDeadline())
-                .status(ContractStatus.INVITED)
                 .build();
 
-        Contract savedContract = contractRepository.save(contract);
+        contract.getShards().add(shard);
+        contract = contractRepository.save(contract);
+        log.info("Contract created: {} by company {}", contract.getUuid(), senderCompany.getUuid());
 
-        return mapToResponse(savedContract);
-    }
-
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return contractMapper.toResponse(contract);
     }
 }
