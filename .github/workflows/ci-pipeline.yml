@@ -16,6 +16,10 @@ jobs:
 
       - name: Build and Start Containers
         run: docker compose up -d --build
+        env:
+          DB_PASSWORD: "test_password"
+          JWT_SECRET: "super_secret_test_key_12345"
+          JWT_EXPIRATION: "3600000"
 
       - name: Run Cypress Tests
         uses: cypress-io/github-action@v6
