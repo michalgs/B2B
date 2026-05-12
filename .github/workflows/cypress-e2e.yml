@@ -9,6 +9,10 @@ on:
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
+    env:
+      DB_PASSWORD: password
+      JWT_SECRET: secret123
+      JWT_EXPIRATION: 3600000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,10 +22,6 @@ jobs:
 
       - name: Start services with Docker Compose
         run: docker compose up -d
-        env:
-          DB_PASSWORD: password
-          JWT_SECRET: secret123
-          JWT_EXPIRATION: 3600000
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
