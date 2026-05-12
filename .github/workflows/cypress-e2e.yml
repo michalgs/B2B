@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DB_PASSWORD: password
-      JWT_SECRET: "my-secure-long-and-random-32-char-secret-key-123"
+      JWT_SECRET: "mysecurelongandrandom32charsecretkey1234567890random"
       JWT_EXPIRATION: 3600000
     steps:
       - name: Checkout
