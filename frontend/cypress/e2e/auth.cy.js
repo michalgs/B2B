@@ -1,5 +1,8 @@
 describe('Authentication Flow', () => {
-  const uniqueEmail = `test-${Date.now()}@example.com`;
+  const now = Date.now();
+  const uniqueEmail = `test-${now}@example.com`;
+  const uniqueCompanyName = `Acme Corp ${now}`;
+  const uniqueNip = Math.floor(1000000000 + Math.random() * 9000000000).toString();
 
   beforeEach(() => {
     // Clear cookies before each test to ensure a clean state
@@ -40,6 +43,9 @@ describe('Authentication Flow', () => {
       cy.get('[data-test="firstname-error"]').should('contain', 'First name is required');
       cy.get('[data-test="lastname-error"]').should('contain', 'Last name is required');
       cy.get('[data-test="email-error"]').should('contain', 'Email is required');
+      cy.get('[data-test="company-name-error"]').should('contain', 'Company name is required');
+      cy.get('[data-test="nip-error"]').should('contain', 'NIP is required');
+      cy.get('[data-test="company-address-error"]').should('contain', 'Company address is required');
       cy.get('[data-test="password-error"]').should('contain', 'Password is required');
     });
 
@@ -48,6 +54,9 @@ describe('Authentication Flow', () => {
       cy.get('[data-test="firstname-input"]').type('John');
       cy.get('[data-test="lastname-input"]').type('Doe');
       cy.get('[data-test="email-input"]').type(uniqueEmail);
+      cy.get('[data-test="company-name-input"]').type(uniqueCompanyName);
+      cy.get('[data-test="nip-input"]').type(uniqueNip);
+      cy.get('[data-test="company-address-input"]').type('123 Business St');
       cy.get('[data-test="password-input"]').type('password123');
       cy.get('[data-test="register-submit"]').click();
 
@@ -62,6 +71,9 @@ describe('Authentication Flow', () => {
       cy.get('[data-test="firstname-input"]').type('John');
       cy.get('[data-test="lastname-input"]').type('Doe');
       cy.get('[data-test="email-input"]').type(uniqueEmail);
+      cy.get('[data-test="company-name-input"]').type(uniqueCompanyName);
+      cy.get('[data-test="nip-input"]').type(uniqueNip);
+      cy.get('[data-test="company-address-input"]').type('123 Business St');
       cy.get('[data-test="password-input"]').type('password123');
       cy.get('[data-test="register-submit"]').click();
 
@@ -70,23 +82,32 @@ describe('Authentication Flow', () => {
       cy.get('[data-test="firstname-input"]').type('Jane');
       cy.get('[data-test="lastname-input"]').type('Smith');
       cy.get('[data-test="email-input"]').type(uniqueEmail);
+      cy.get('[data-test="company-name-input"]').type(`Other Corp ${Date.now()}`);
+      cy.get('[data-test="nip-input"]').type(Math.floor(1000000000 + Math.random() * 9000000000).toString());
+      cy.get('[data-test="company-address-input"]').type('321 Other St');
       cy.get('[data-test="password-input"]').type('password123');
       cy.get('[data-test="register-submit"]').click();
 
       cy.get('[data-test="register-error"]').should('be.visible')
-        .and('contain', 'An error occurred');
+        .and('contain', 'Company or User already registered');
     });
   });
 
   describe('Full Flow', () => {
     it('should register, login, and access dashboard', () => {
-      const flowEmail = `flow-${Date.now()}@example.com`;
+      const flowNow = Date.now();
+      const flowEmail = `flow-${flowNow}@example.com`;
+      const flowCompanyName = `Flow Corp ${flowNow}`;
+      const flowNip = Math.floor(1000000000 + Math.random() * 9000000000).toString();
 
       // 1. Register
       cy.visitWithWait('/register');
       cy.get('[data-test="firstname-input"]').type('Flow');
       cy.get('[data-test="lastname-input"]').type('User');
       cy.get('[data-test="email-input"]').type(flowEmail);
+      cy.get('[data-test="company-name-input"]').type(flowCompanyName);
+      cy.get('[data-test="nip-input"]').type(flowNip);
+      cy.get('[data-test="company-address-input"]').type('456 Flow St');
       cy.get('[data-test="password-input"]').type('password123');
       cy.get('[data-test="register-submit"]').click();
 
