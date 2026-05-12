@@ -76,7 +76,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedNegotiation, setSelectedNegotiation] = useState<Negotiation | null>(null);
-  
+
   // Form states
   const [recipientCompanyUuid, setRecipientCompanyUuid] = useState("");
   const [title, setTitle] = useState("");
@@ -190,15 +190,15 @@ function Dashboard() {
                   </div>
                 ) : (
                   negotiations.map((negotiation, index) => (
-                    <div key={negotiation.uuid}>
-                      <div 
+                    <div key={negotiation.uuid} data-test="negotiation-item">
+                      <div
                         className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => setSelectedNegotiation(negotiation)}
                       >
                         <div className="flex flex-col gap-1">
-                          <span className="font-semibold text-base">
-                            {user.company?.name === negotiation.senderCompanyName 
-                              ? negotiation.recipientCompanyName 
+                          <span className="font-semibold text-base" data-test="negotiation-partner">
+                            {user.company?.name === negotiation.senderCompanyName
+                              ? negotiation.recipientCompanyName
                               : negotiation.senderCompanyName}
                           </span>
                           <span className="text-sm text-muted-foreground">Last updated: {formatDate(negotiation.updatedAt)}</span>
@@ -208,10 +208,10 @@ function Dashboard() {
                           <span className={cn(
                             "text-xs px-2 py-0.5 rounded-full border",
                             negotiation.status === "ACCEPTED" ? "bg-green-100 text-green-700 border-green-200" :
-                            negotiation.status === "REJECTED" ? "bg-red-100 text-red-700 border-red-200" :
-                            negotiation.status === "INVITED" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
-                            "bg-blue-100 text-blue-700 border-blue-200"
-                          )}>
+                              negotiation.status === "REJECTED" ? "bg-red-100 text-red-700 border-red-200" :
+                                negotiation.status === "INVITED" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                                  "bg-blue-100 text-blue-700 border-blue-200"
+                          )} data-test="negotiation-status">
                             {negotiation.status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
                           </span>
                         </div>
@@ -227,10 +227,11 @@ function Dashboard() {
             </CardFooter>
           </Card>
 
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="w-full py-6 text-lg font-semibold shadow-lg"
             onClick={() => setIsModalOpen(true)}
+            data-test="new-negotiation-button"
           >
             New Negotiation
           </Button>
@@ -239,7 +240,7 @@ function Dashboard() {
 
       {/* New Negotiation Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" data-test="negotiation-modal">
           <Card className="w-full max-w-2xl bg-background shadow-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Start New Negotiation</CardTitle>
@@ -248,25 +249,25 @@ function Dashboard() {
             <form onSubmit={handleCreateNegotiation}>
               <CardContent className="space-y-4 px-4">
                 {error && <p className="text-destructive text-sm font-medium">{error}</p>}
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel>
                       <FieldTitle>Recipient Company</FieldTitle>
-                      <Select 
-                        required 
+                      <Select
+                        required
                         value={recipientCompanyUuid}
                         onValueChange={setRecipientCompanyUuid}
                       >
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full" data-test="recipient-company-select">
                           <SelectValue placeholder="Select a company">
-                            {recipientCompanyUuid 
-                              ? companies.find(c => c.uuid === recipientCompanyUuid)?.name 
+                            {recipientCompanyUuid
+                              ? companies.find(c => c.uuid === recipientCompanyUuid)?.name
                               : undefined}
                           </SelectValue>
                         </SelectTrigger>                        <SelectContent>
                           {companies.map(c => (
-                            <SelectItem key={c.uuid} value={c.uuid}>
+                            <SelectItem key={c.uuid} value={c.uuid} data-test="company-option">
                               {c.name}
                             </SelectItem>
                           ))}                        </SelectContent>
@@ -277,11 +278,12 @@ function Dashboard() {
                   <Field>
                     <FieldLabel>
                       <FieldTitle>Title</FieldTitle>
-                      <Input 
-                        placeholder="e.g. Software Development Project" 
-                        required 
+                      <Input
+                        placeholder="e.g. Software Development Project"
+                        required
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
+                        data-test="negotiation-title-input"
                       />
                     </FieldLabel>
                   </Field>
@@ -289,13 +291,14 @@ function Dashboard() {
                   <Field>
                     <FieldLabel>
                       <FieldTitle>Price</FieldTitle>
-                      <Input 
-                        placeholder="e.g. 5000" 
+                      <Input
+                        placeholder="e.g. 5000"
                         type="number"
                         step="0.01"
-                        required 
+                        required
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
+                        data-test="negotiation-price-input"
                       />
                     </FieldLabel>
                   </Field>
@@ -303,11 +306,12 @@ function Dashboard() {
                   <Field>
                     <FieldLabel>
                       <FieldTitle>Deadline</FieldTitle>
-                      <Input 
+                      <Input
                         type="datetime-local"
-                        required 
+                        required
                         value={deadline}
                         onChange={(e) => setDeadline(e.target.value)}
+                        data-test="negotiation-deadline-input"
                       />
                     </FieldLabel>
                   </Field>
@@ -316,19 +320,20 @@ function Dashboard() {
                 <Field>
                   <FieldLabel>
                     <FieldTitle>Description</FieldTitle>
-                    <textarea 
+                    <textarea
                       className="w-full min-h-[150px] px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                       placeholder="Detailed terms..."
                       required
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
+                      data-test="negotiation-description-input"
                     />
                   </FieldLabel>
                 </Field>
               </CardContent>
               <CardFooter className="justify-end gap-3 mt-4">
                 <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} data-test="negotiation-submit-button">
                   {isSubmitting ? "Sending..." : "Send Offer"}
                 </Button>
               </CardFooter>
@@ -339,7 +344,7 @@ function Dashboard() {
 
       {/* Detail / Action Modal */}
       {selectedNegotiation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" data-test="negotiation-details-modal">
           <Card className="w-full max-w-lg bg-background shadow-2xl overflow-y-auto">
             <CardHeader>
               <CardTitle>Negotiation Details</CardTitle>
@@ -349,35 +354,37 @@ function Dashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-sm font-bold text-muted-foreground">STATUS</h4>
-                  <p className="font-medium">{selectedNegotiation.status}</p>
+                  <p className="font-medium" data-test="modal-status">{selectedNegotiation.status}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-muted-foreground">SENDER</h4>
-                  <p className="font-medium">{selectedNegotiation.senderCompanyName}</p>
+                  <p className="font-medium" data-test="modal-sender">{selectedNegotiation.senderCompanyName}</p>
                 </div>
               </div>
               <div>
                 <h4 className="text-sm font-bold text-muted-foreground">OFFERING</h4>
-                <p className="font-medium">{selectedNegotiation.initialOffering}</p>
+                <p className="font-medium" data-test="modal-offering">{selectedNegotiation.initialOffering}</p>
               </div>
               {error && <p className="text-destructive text-sm font-medium">{error}</p>}
             </CardContent>
             <CardFooter className="justify-end gap-3 mt-4 border-t pt-4">
               <Button variant="ghost" type="button" onClick={() => setSelectedNegotiation(null)}>Close</Button>
-              
+
               {selectedNegotiation.status === 'INVITED' && user.company?.name === selectedNegotiation.recipientCompanyName && (
                 <>
-                  <Button 
-                    variant="destructive" 
+                  <Button
+                    variant="destructive"
                     onClick={() => handleUpdateStatus(selectedNegotiation.uuid, 'REJECTED')}
                     disabled={isSubmitting}
+                    data-test="reject-offer-button"
                   >
                     Reject Offer
                   </Button>
-                  <Button 
-                    className="bg-green-600 hover:bg-green-700" 
+                  <Button
+                    className="bg-green-600 hover:bg-green-700"
                     onClick={() => handleUpdateStatus(selectedNegotiation.uuid, 'IN_PROGRESS')}
                     disabled={isSubmitting}
+                    data-test="accept-offer-button"
                   >
                     Accept Offer
                   </Button>
