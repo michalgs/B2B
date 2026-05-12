@@ -20,6 +20,9 @@ const config = defineConfig({
   server: {
     https: true,
   },
+  preview: {
+    https: true,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
