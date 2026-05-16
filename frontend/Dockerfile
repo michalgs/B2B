@@ -7,7 +7,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 COPY package*.json ./
 COPY patches ./patches
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
