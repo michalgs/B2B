@@ -1,3 +1,4 @@
+# --- ETAP BUDOWANIA (Może działać jako root) ---
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
@@ -15,7 +16,11 @@ RUN ./gradlew clean bootJar -x test --no-daemon
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-COPY --from=build /app/build/libs/*.jar app.jar
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=build --chown=appuser:appgroup /app/build/libs/*.jar app.jar
+
+USER appuser
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
