@@ -1,13 +1,13 @@
 package com.example.b2b.controller;
 
 import com.example.b2b.dto.CompanyResponse;
+import com.example.b2b.dto.CompanyUpdateRequest;
 import com.example.b2b.model.User;
 import com.example.b2b.service.CompanyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,5 +21,11 @@ public class CompanyController {
     @GetMapping
     public List<CompanyResponse> getCompanies(@AuthenticationPrincipal User user) {
         return companyService.getAllOtherCompanies(user);
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<Void> updateMyCompany(@AuthenticationPrincipal User user, @RequestBody CompanyUpdateRequest request) {
+        companyService.updateCompany(user, request);
+        return ResponseEntity.ok().build();
     }
 }

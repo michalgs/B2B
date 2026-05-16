@@ -1,6 +1,8 @@
 package com.example.b2b.service;
 
 import com.example.b2b.dto.CompanyResponse;
+import com.example.b2b.dto.CompanyUpdateRequest;
+import com.example.b2b.model.Company;
 import com.example.b2b.model.User;
 import com.example.b2b.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,5 +27,23 @@ public class CompanyService {
                         .name(c.getName())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void updateCompany(User currentUser, CompanyUpdateRequest request) {
+        Company company = currentUser.getCompany();
+        if (request.getName() != null) {
+            company.setName(request.getName());
+        }
+        if (request.getAddress() != null) {
+            company.setAddress(request.getAddress());
+        }
+        if (request.getDescription() != null) {
+            company.setDescription(request.getDescription());
+        }
+        if (request.getLogoUrl() != null) {
+            company.setLogoUrl(request.getLogoUrl());
+        }
+        companyRepository.save(company);
     }
 }
