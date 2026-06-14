@@ -10,6 +10,7 @@ export function getApiBaseUrl() {
   if (isServer) {
     return 'http://backend:8080';
   }
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  // On client, use relative paths to leverage Vite proxy
+  return '';
 }
 

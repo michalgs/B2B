@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '#/components/ui/card'
 import { Separator } from '#/components/ui/separator'
@@ -33,6 +33,17 @@ interface Company {
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: async () => {
+    // During SSR, we skip the fetch because we don't have the cookies
+    // The client will re-run this and redirect if unauthorized
+    if (typeof window === 'undefined') {
+      return {
+        user: { firstName: '', lastName: '', email: '', company: null },
+        negotiations: [],
+        companies: [],
+        isPlaceholder: true,
+      }
+    }
+
     try {
       const userResponse = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
         credentials: 'include',
@@ -58,6 +69,7 @@ export const Route = createFileRoute('/dashboard')({
         user,
         negotiations: (data.content || []) as Negotiation[],
         companies: companies as Company[],
+        isPlaceholder: false,
       }
     } catch (error) {
       if (error instanceof Error && 'to' in error) {
@@ -72,8 +84,9 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function Dashboard() {
-  const { user, negotiations, companies } = Route.useRouteContext();
+  const { user, negotiations, companies, isPlaceholder } = Route.useRouteContext();
   const navigate = useNavigate();
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedNegotiation, setSelectedNegotiation] = useState<Negotiation | null>(null);
 
@@ -87,6 +100,26 @@ function Dashboard() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isPlaceholder && typeof window !== 'undefined') {
+      console.log('[Dashboard] Placeholder detected on client, invalidating to fetch real data');
+      router.invalidate();
+    }
+  }, [isPlaceholder, router]);
+
+  if (isPlaceholder) {
+    return (
+      <main className="page-wrap px-4 py-12 flex flex-col items-center">
+        <div className='w-full md:w-3/4 lg:w-1/2'>
+          <Logo />
+          <div className="mt-8 p-8 text-center border rounded-lg bg-muted/20">
+            <h3 className="text-xl font-semibold text-muted-foreground animate-pulse">Synchronizing with Archive...</h3>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

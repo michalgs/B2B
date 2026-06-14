@@ -18,14 +18,14 @@ public class ContractMapper {
         }
 
         // The current frontend expectation for "initialOffering" is a string summary
-        // We derive it from the first shard (the initial offer)
-        ContractShard initialShard = contract.getShards().stream()
-                .min(Comparator.comparing(ContractShard::getCreatedAt))
+        // We derive it from the latest shard (the current offer)
+        ContractShard latestShard = contract.getShards().stream()
+                .max(Comparator.comparing(ContractShard::getCreatedAt))
                 .orElse(null);
 
         String offering = "";
-        if (initialShard != null) {
-            offering = initialShard.getTitle() + " ($" + initialShard.getPrice() + ")";
+        if (latestShard != null) {
+            offering = latestShard.getTitle() + " ($" + latestShard.getPrice() + ")";
         }
 
         return ContractResponse.builder()

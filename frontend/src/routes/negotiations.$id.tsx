@@ -32,6 +32,14 @@ interface NegotiationDetail {
 
 export const Route = createFileRoute('/negotiations/$id')({
   beforeLoad: async ({ params }) => {
+    if (typeof window === 'undefined') {
+      return {
+        user: { firstName: '', lastName: '', email: '', company: null },
+        negotiation: { uuid: '', senderCompanyName: '', recipientCompanyName: '', status: '', updatedAt: '', shards: [] },
+        isPlaceholder: true,
+      }
+    }
+
     try {
       const userResponse = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
         credentials: 'include',
@@ -52,6 +60,7 @@ export const Route = createFileRoute('/negotiations/$id')({
       return {
         user,
         negotiation: negotiation as NegotiationDetail,
+        isPlaceholder: false,
       }
     } catch (error) {
       if (error instanceof Error && 'to' in error) {
@@ -64,7 +73,7 @@ export const Route = createFileRoute('/negotiations/$id')({
 })
 
 function NegotiationView() {
-  const { user, negotiation } = Route.useRouteContext();
+  const { user, negotiation, isPlaceholder } = Route.useRouteContext();
   const navigate = useNavigate();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,6 +88,13 @@ function NegotiationView() {
   const [price, setPrice] = useState("0");
   const [currency, setCurrency] = useState("USD");
   const [deadline, setDeadline] = useState("");
+
+  useEffect(() => {
+    if (isPlaceholder && typeof window !== 'undefined') {
+      console.log('[NegotiationView] Placeholder detected on client, invalidating to fetch real data');
+      router.invalidate();
+    }
+  }, [isPlaceholder, router]);
 
   useEffect(() => {
     if (negotiation?.shards?.length > 0) {
@@ -108,11 +124,18 @@ function NegotiationView() {
     }
   }, [negotiation, selectedShardUuid, shardsCount, isSubmitting]);
 
-  console.log('Rendering NegotiationView', { 
-    negotiationStatus: negotiation?.status, 
-    shardsCount: negotiation?.shards?.length,
-    selectedShardUuid
-  });
+  if (isPlaceholder) {
+    return (
+      <main className="page-wrap px-4 py-12 flex flex-col items-center">
+        <div className='w-full lg:w-4/5 xl:w-3/4'>
+           <Logo />
+           <div className="mt-8 p-8 text-center border rounded-lg bg-muted/20">
+             <h3 className="text-xl font-semibold text-muted-foreground animate-pulse">Accessing Secure Dossier...</h3>
+           </div>
+        </div>
+      </main>
+    );
+  }
 
   if (!negotiation || !negotiation.shards || negotiation.shards.length === 0) {
     return (
@@ -287,7 +310,7 @@ function NegotiationView() {
                     <p className="text-destructive text-sm font-medium p-4 bg-destructive/10 rounded-md">{error}</p>
                   </CardContent>
                 )}
-                {isViewingLatest && negotiation.status === 'INVITED' && user.company?.name === negotiation.recipientCompanyName && (
+                {isViewingLatest && (negotiation.status === 'INVITED' || negotiation.status === 'NEGOTIATING') && user.company?.name !== latestShard.createdByName && (
                   <CardFooter className="border-t bg-muted/30 flex justify-end gap-4 py-4">
                     <Button
                       variant="destructive"
@@ -300,13 +323,14 @@ function NegotiationView() {
                     <Button
                       className="bg-green-600 hover:bg-green-700"
                       size="lg"
-                      onClick={() => handleUpdateStatus('IN_PROGRESS')}
+                      onClick={() => handleUpdateStatus('ACCEPTED')}
                       disabled={isSubmitting}
                     >
                       Accept Offer
                     </Button>
                   </CardFooter>
                 )}
+
               </Card>
             ) : (
               <Card className="box-shadow-2xl">
@@ -315,7 +339,7 @@ function NegotiationView() {
                   <CardDescription>Propose new terms for this negotiation</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleCounterOffer}>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 px-4">
                     <Field>
                       <FieldLabel>
                         <FieldTitle>Title</FieldTitle>
@@ -379,12 +403,12 @@ function NegotiationView() {
 
           {/* Right Column: Versions */}
           <div className="space-y-6">
-            <Card className="box-shadow-lg h-full">
+            <Card className="box-shadow-lg sticky top-8">
               <CardHeader className="border-b">
                 <CardTitle className="text-lg">History</CardTitle>
                 <CardDescription>Previous iterations</CardDescription>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 max-h-[600px] overflow-y-auto">
                 <div className="flex flex-col">
                   {negotiation.shards.slice().reverse().map((shard, index) => (
                     <div 

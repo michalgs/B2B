@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,13 +33,18 @@ public class ContractService {
         Contract contract = contractRepository.findByUuid(uuid)
                 .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
 
-        // Only the recipient can accept or reject in this simplified status flow
-        if (!contract.getRecipient().getUuid().equals(company.getUuid())) {
-            throw new IllegalStateException("Only the recipient can change the contract status");
+        if (contract.getStatus() == ContractStatus.ACCEPTED || contract.getStatus() == ContractStatus.REJECTED) {
+            throw new IllegalStateException("Negotiation is already closed");
         }
 
-        if (contract.getStatus() != ContractStatus.INVITED) {
-            throw new IllegalStateException("Negotiation is already resolved or in progress");
+        // Get the latest shard to determine who is the recipient of the current offer
+        ContractShard latestShard = contract.getShards().stream()
+                .max(Comparator.comparing(ContractShard::getCreatedAt))
+                .orElseThrow(() -> new IllegalStateException("Contract has no shards"));
+
+        // The person who can accept/reject is the one who DID NOT create the latest shard
+        if (latestShard.getCreatedBy().getUuid().equals(company.getUuid())) {
+            throw new IllegalStateException("You cannot accept or reject your own offer");
         }
 
         contract.setStatus(newStatus);
