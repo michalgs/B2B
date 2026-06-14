@@ -1,11 +1,13 @@
 package com.example.b2b.mapper;
 
 import com.example.b2b.dto.ContractResponse;
+import com.example.b2b.dto.ShardResponse;
 import com.example.b2b.model.Contract;
 import com.example.b2b.model.ContractShard;
 import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
+import java.util.stream.Collectors;
 
 @Component
 public class ContractMapper {
@@ -33,6 +35,23 @@ public class ContractMapper {
                 .recipientCompanyName(contract.getRecipient().getName())
                 .initialOffering(offering)
                 .updatedAt(contract.getUpdatedAt())
+                .shards(contract.getShards().stream()
+                        .map(this::toShardResponse)
+                        .sorted(Comparator.comparing(ShardResponse::getCreatedAt))
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
+    private ShardResponse toShardResponse(ContractShard shard) {
+        return ShardResponse.builder()
+                .uuid(shard.getUuid())
+                .title(shard.getTitle())
+                .description(shard.getDescription())
+                .price(shard.getPrice())
+                .currency(shard.getCurrency())
+                .deadline(shard.getDeadline())
+                .createdAt(shard.getCreatedAt())
+                .createdByName(shard.getCreatedBy().getName())
                 .build();
     }
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 
 import appCss from '../styles.css?url'
 
@@ -28,6 +28,7 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  component: () => <Outlet />,
   shellComponent: RootDocument,
 })
 

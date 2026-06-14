@@ -15,6 +15,7 @@ import { Route as LandingRouteImport } from './routes/landing'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as NegotiationsIdRouteImport } from './routes/negotiations.$id'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -46,6 +47,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NegotiationsIdRoute = NegotiationsIdRouteImport.update({
+  id: '/negotiations/$id',
+  path: '/negotiations/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/negotiations/$id': typeof NegotiationsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/negotiations/$id': typeof NegotiationsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,12 +79,27 @@ export interface FileRoutesById {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/negotiations/$id': typeof NegotiationsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/dashboard' | '/landing' | '/login' | '/register'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/dashboard'
+    | '/landing'
+    | '/login'
+    | '/register'
+    | '/negotiations/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/dashboard' | '/landing' | '/login' | '/register'
+  to:
+    | '/'
+    | '/about'
+    | '/dashboard'
+    | '/landing'
+    | '/login'
+    | '/register'
+    | '/negotiations/$id'
   id:
     | '__root__'
     | '/'
@@ -85,6 +108,7 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/register'
+    | '/negotiations/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,6 +118,7 @@ export interface RootRouteChildren {
   LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  NegotiationsIdRoute: typeof NegotiationsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -140,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/negotiations/$id': {
+      id: '/negotiations/$id'
+      path: '/negotiations/$id'
+      fullPath: '/negotiations/$id'
+      preLoaderRoute: typeof NegotiationsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -150,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  NegotiationsIdRoute: NegotiationsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

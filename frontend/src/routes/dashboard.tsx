@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Separator } from '#/components/ui/separator'
 import { Field, FieldLabel, FieldTitle, FieldDescription } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
-import { cn } from '#/lib/utils'
+import { cn, getApiBaseUrl } from '#/lib/utils'
 import Logo from '#/components/Logo'
 import {
   Select,
@@ -15,7 +15,7 @@ import {
 } from '#/components/ui/select'
 import { useState, useEffect } from 'react'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = getApiBaseUrl();
 
 interface Negotiation {
   uuid: string;
@@ -193,7 +193,7 @@ function Dashboard() {
                     <div key={negotiation.uuid} data-test="negotiation-item">
                       <div
                         className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => setSelectedNegotiation(negotiation)}
+                        onClick={() => navigate({ to: '/negotiations/$id', params: { id: negotiation.uuid } })}
                       >
                         <div className="flex flex-col gap-1">
                           <span className="font-semibold text-base" data-test="negotiation-partner">
@@ -209,7 +209,7 @@ function Dashboard() {
                             "text-xs px-2 py-0.5 rounded-full border",
                             negotiation.status === "ACCEPTED" ? "bg-green-100 text-green-700 border-green-200" :
                               negotiation.status === "REJECTED" ? "bg-red-100 text-red-700 border-red-200" :
-                                negotiation.status === "INVITED" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                                negotiation.status === "INVITED" || negotiation.status === "NEGOTIATING" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
                                   "bg-blue-100 text-blue-700 border-blue-200"
                           )} data-test="negotiation-status">
                             {negotiation.status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}

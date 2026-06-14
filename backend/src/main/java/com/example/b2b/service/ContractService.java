@@ -2,6 +2,7 @@ package com.example.b2b.service;
 
 import com.example.b2b.dto.ContractCreateRequest;
 import com.example.b2b.dto.ContractResponse;
+import com.example.b2b.dto.CounterOfferRequest;
 import com.example.b2b.mapper.ContractMapper;
 import com.example.b2b.model.*;
 import com.example.b2b.repository.CompanyRepository;
@@ -43,6 +44,54 @@ public class ContractService {
         contract.setStatus(newStatus);
         contract = contractRepository.save(contract);
         log.info("Contract {} status updated to {} by company {}", contract.getUuid(), newStatus, company.getUuid());
+
+        return contractMapper.toResponse(contract);
+    }
+
+    @Transactional
+    public ContractResponse counterOffer(UUID uuid, CounterOfferRequest request, User user) {
+        Company company = user.getCompany();
+        Contract contract = contractRepository.findByUuid(uuid)
+                .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
+
+        if (!contract.getSender().getUuid().equals(company.getUuid()) &&
+                !contract.getRecipient().getUuid().equals(company.getUuid())) {
+            throw new IllegalArgumentException("You are not authorized to counter-offer on this contract");
+        }
+
+        if (contract.getStatus() == ContractStatus.ACCEPTED || contract.getStatus() == ContractStatus.REJECTED) {
+            throw new IllegalStateException("Cannot counter-offer on a closed contract");
+        }
+
+        ContractShard shard = ContractShard.builder()
+                .uuid(UUID.randomUUID())
+                .contract(contract)
+                .createdBy(company)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .price(request.getPrice())
+                .currency(request.getCurrency())
+                .deadline(request.getDeadline())
+                .build();
+
+        contract.getShards().add(shard);
+        contract.setStatus(ContractStatus.NEGOTIATING);
+        contract = contractRepository.save(contract);
+        log.info("Counter offer added to contract: {} by company {}", contract.getUuid(), company.getUuid());
+
+        return contractMapper.toResponse(contract);
+    }
+
+    @Transactional(readOnly = true)
+    public ContractResponse getContractByUuid(UUID uuid, User user) {
+        Company company = user.getCompany();
+        Contract contract = contractRepository.findByUuid(uuid)
+                .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
+
+        if (!contract.getSender().getUuid().equals(company.getUuid()) &&
+                !contract.getRecipient().getUuid().equals(company.getUuid())) {
+            throw new IllegalArgumentException("You are not authorized to view this contract");
+        }
 
         return contractMapper.toResponse(contract);
     }
