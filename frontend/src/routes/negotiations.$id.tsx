@@ -159,9 +159,11 @@ function NegotiationView() {
       });
 
       if (response.ok) {
-        queryClient.invalidateQueries({ queryKey: ['negotiation', id] });
+        await queryClient.invalidateQueries({ queryKey: ['negotiations'] });
+        await queryClient.invalidateQueries({ queryKey: ['negotiation', id] });
         navigate({ to: '/dashboard' });
-      } else {
+      }
+ else {
         const data = await response.json();
         setError(data.message || "Failed to update status.");
       }
@@ -236,7 +238,7 @@ function NegotiationView() {
                 <CardHeader className="border-b shrink-0">
                   <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle>
+                      <CardTitle data-test="offer-details-title">
                         {isViewingLatest ? 'Current Offer Details' : 'Historical Version Details'}
                       </CardTitle>
                       <CardDescription>
@@ -247,10 +249,10 @@ function NegotiationView() {
                     </div>
                     <div className="flex gap-2">
                       {isViewingLatest && negotiation.status !== 'ACCEPTED' && negotiation.status !== 'REJECTED' && (
-                        <Button onClick={() => setShowCounterForm(true)}>Counter Offer</Button>
+                        <Button onClick={() => setShowCounterForm(true)} data-test="counter-offer-button">Counter Offer</Button>
                       )}
                       {!isViewingLatest && (
-                        <Button variant="outline" size="sm" onClick={() => setSelectedShardUuid(latestShard.uuid)}>
+                        <Button variant="outline" size="sm" onClick={() => setSelectedShardUuid(latestShard.uuid)} data-test="back-to-latest-button">
                           Back to Latest
                         </Button>
                       )}
@@ -260,12 +262,12 @@ function NegotiationView() {
                 <CardContent className="pt-6 space-y-6 flex-1 overflow-y-auto">
                   <div>
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Title</h4>
-                    <p className="text-xl font-semibold">{viewedShard?.title || 'Untitled'}</p>
+                    <p className="text-xl font-semibold" data-test="view-offer-title">{viewedShard?.title || 'Untitled'}</p>
                   </div>
                   
                   <div>
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Description</h4>
-                    <p className="text-base text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    <p className="text-base text-muted-foreground whitespace-pre-wrap leading-relaxed" data-test="view-offer-description">
                       {viewedShard?.description || 'No description provided.'}
                     </p>
                   </div>
@@ -273,19 +275,19 @@ function NegotiationView() {
                   <div className="grid grid-cols-2 gap-8 pt-4">
                     <div>
                       <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Proposed Price</h4>
-                      <p className="text-2xl font-bold text-primary">
+                      <p className="text-2xl font-bold text-primary" data-test="view-offer-price">
                         {(viewedShard?.price || 0).toLocaleString(undefined, { style: 'currency', currency: viewedShard?.currency || 'USD' })}
                       </p>
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Deadline</h4>
-                      <p className="text-lg font-medium">{formatDate(viewedShard?.deadline)}</p>
+                      <p className="text-lg font-medium" data-test="view-offer-deadline">{formatDate(viewedShard?.deadline)}</p>
                     </div>
                   </div>
                 </CardContent>
                 {error && (
                   <CardContent className="pt-0 shrink-0">
-                    <p className="text-destructive text-sm font-medium p-4 bg-destructive/10 rounded-md">{error}</p>
+                    <p className="text-destructive text-sm font-medium p-4 bg-destructive/10 rounded-md" data-test="offer-error-message">{error}</p>
                   </CardContent>
                 )}
                 {isViewingLatest && (negotiation.status === 'INVITED' || negotiation.status === 'NEGOTIATING') && user.company?.name !== latestShard.createdByName && (
@@ -295,6 +297,7 @@ function NegotiationView() {
                       size="lg"
                       onClick={() => handleUpdateStatus('REJECTED')}
                       disabled={isSubmitting}
+                      data-test="reject-offer-button"
                     >
                       Reject Offer
                     </Button>
@@ -303,6 +306,7 @@ function NegotiationView() {
                       size="lg"
                       onClick={() => handleUpdateStatus('ACCEPTED')}
                       disabled={isSubmitting}
+                      data-test="accept-offer-button"
                     >
                       Accept Offer
                     </Button>
@@ -311,7 +315,7 @@ function NegotiationView() {
 
               </Card>
             ) : (
-              <Card className="box-shadow-2xl h-full flex flex-col max-h-[600px]">
+              <Card className="box-shadow-2xl h-full flex flex-col max-h-[600px]" data-test="counter-offer-form">
                 <CardHeader className="shrink-0">
                   <CardTitle>Counter Offer</CardTitle>
                   <CardDescription>Propose new terms for this negotiation</CardDescription>
@@ -325,6 +329,7 @@ function NegotiationView() {
                           required
                           value={title}
                           onChange={(e) => setTitle(e.target.value)}
+                          data-test="counter-title-input"
                         />
                       </FieldLabel>
                     </Field>
@@ -339,6 +344,7 @@ function NegotiationView() {
                             required
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
+                            data-test="counter-price-input"
                           />
                         </FieldLabel>
                       </Field>
@@ -350,6 +356,7 @@ function NegotiationView() {
                             required
                             value={deadline}
                             onChange={(e) => setDeadline(e.target.value)}
+                            data-test="counter-deadline-input"
                           />
                         </FieldLabel>
                       </Field>
@@ -363,14 +370,15 @@ function NegotiationView() {
                           required
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
+                          data-test="counter-description-input"
                         />
                       </FieldLabel>
                     </Field>
-                    {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                    {error && <p className="text-destructive text-sm font-medium" data-test="counter-error-message">{error}</p>}
                   </CardContent>
                   <CardFooter className="justify-end gap-3 mt-4 shrink-0">
-                    <Button variant="ghost" type="button" onClick={() => setShowCounterForm(false)}>Cancel</Button>
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button variant="ghost" type="button" onClick={() => setShowCounterForm(false)} data-test="counter-cancel-button">Cancel</Button>
+                    <Button type="submit" disabled={isSubmitting} data-test="counter-submit-button">
                       {isSubmitting ? "Sending..." : "Send Counter Offer"}
                     </Button>
                   </CardFooter>
@@ -401,6 +409,7 @@ function NegotiationView() {
                         setSelectedShardUuid(shard.uuid);
                         setShowCounterForm(false);
                       }}
+                      data-test="history-item"
                     >
                       <div className="flex justify-between items-start mb-1">
                         <span className="font-semibold text-sm">

@@ -49,8 +49,9 @@ const negotiationsQueryOptions = queryOptions({
     const response = await fetch(`${API_BASE_URL}/api/v1/contracts`, {
       credentials: 'include',
     });
-    const data = response.ok ? await response.json() : { content: [] };
-    return (data.content || []) as Negotiation[];
+    const data = response.ok ? await response.json() : [];
+    // Handle both flat list and wrapped content (just in case)
+    return (Array.isArray(data) ? data : data.content || []) as Negotiation[];
   },
 })
 
@@ -83,6 +84,7 @@ function Dashboard() {
   const queryClient = useQueryClient();
   const { data: user } = useSuspenseQuery(userQueryOptions);
   const { data: negotiations } = useSuspenseQuery(negotiationsQueryOptions);
+  console.log('negotiations', negotiations);
   const { data: companies } = useSuspenseQuery(companiesQueryOptions);
 
   const navigate = useNavigate();
