@@ -2,7 +2,7 @@ import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/rea
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '#/components/ui/card'
 import { Separator } from '#/components/ui/separator'
-import { Field, FieldLabel, FieldTitle, FieldDescription } from '#/components/ui/field'
+import { Field, FieldLabel, FieldTitle } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { cn, getApiBaseUrl } from '#/lib/utils'
 import Logo from '#/components/Logo'
@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { queryOptions, useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -31,62 +32,60 @@ interface Company {
   name: string;
 }
 
+const userQueryOptions = queryOptions({
+  queryKey: ['user', 'me'],
+  queryFn: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Unauthorized');
+    return response.json();
+  },
+})
+
+const negotiationsQueryOptions = queryOptions({
+  queryKey: ['negotiations'],
+  queryFn: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/contracts`, {
+      credentials: 'include',
+    });
+    const data = response.ok ? await response.json() : { content: [] };
+    return (data.content || []) as Negotiation[];
+  },
+})
+
+const companiesQueryOptions = queryOptions({
+  queryKey: ['companies'],
+  queryFn: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/companies`, {
+      credentials: 'include',
+    });
+    return (response.ok ? await response.json() : []) as Company[];
+  },
+})
+
 export const Route = createFileRoute('/dashboard')({
-  beforeLoad: async () => {
-    // During SSR, we skip the fetch because we don't have the cookies
-    // The client will re-run this and redirect if unauthorized
-    if (typeof window === 'undefined') {
-      return {
-        user: { firstName: '', lastName: '', email: '', company: null },
-        negotiations: [],
-        companies: [],
-        isPlaceholder: true,
-      }
-    }
-
+  loader: async ({ context: { queryClient } }) => {
     try {
-      const userResponse = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-        credentials: 'include',
-      });
-      if (!userResponse.ok) {
-        throw redirect({
-          to: '/login',
-        })
-      }
-      const user = await userResponse.json();
-
-      const negotiationsResponse = await fetch(`${API_BASE_URL}/api/v1/contracts`, {
-        credentials: 'include',
-      });
-      const data = negotiationsResponse.ok ? await negotiationsResponse.json() : { content: [] };
-
-      const companiesResponse = await fetch(`${API_BASE_URL}/api/v1/companies`, {
-        credentials: 'include',
-      });
-      const companies = companiesResponse.ok ? await companiesResponse.json() : [];
-
-      return {
-        user,
-        negotiations: (data.content || []) as Negotiation[],
-        companies: companies as Company[],
-        isPlaceholder: false,
-      }
-    } catch (error) {
-      if (error instanceof Error && 'to' in error) {
-        throw error;
-      }
-      throw redirect({
-        to: '/login',
-      })
+      await Promise.all([
+        queryClient.ensureQueryData(userQueryOptions),
+        queryClient.ensureQueryData(negotiationsQueryOptions),
+        queryClient.ensureQueryData(companiesQueryOptions),
+      ])
+    } catch (e) {
+      throw redirect({ to: '/login' })
     }
   },
   component: Dashboard,
 })
 
 function Dashboard() {
-  const { user, negotiations, companies, isPlaceholder } = Route.useRouteContext();
+  const queryClient = useQueryClient();
+  const { data: user } = useSuspenseQuery(userQueryOptions);
+  const { data: negotiations } = useSuspenseQuery(negotiationsQueryOptions);
+  const { data: companies } = useSuspenseQuery(companiesQueryOptions);
+
   const navigate = useNavigate();
-  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedNegotiation, setSelectedNegotiation] = useState<Negotiation | null>(null);
 
@@ -100,26 +99,6 @@ function Dashboard() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (isPlaceholder && typeof window !== 'undefined') {
-      console.log('[Dashboard] Placeholder detected on client, invalidating to fetch real data');
-      router.invalidate();
-    }
-  }, [isPlaceholder, router]);
-
-  if (isPlaceholder) {
-    return (
-      <main className="page-wrap px-4 py-12 flex flex-col items-center">
-        <div className='w-full md:w-3/4 lg:w-1/2'>
-          <Logo />
-          <div className="mt-8 p-8 text-center border rounded-lg bg-muted/20">
-            <h3 className="text-xl font-semibold text-muted-foreground animate-pulse">Synchronizing with Archive...</h3>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -140,7 +119,7 @@ function Dashboard() {
 
       if (response.ok) {
         setSelectedNegotiation(null);
-        navigate({ to: '/dashboard', replace: true });
+        queryClient.invalidateQueries({ queryKey: ['negotiations'] });
       } else {
         const data = await response.json();
         setError(data.message || "Failed to update status.");
@@ -182,8 +161,7 @@ function Dashboard() {
         setDescription("");
         setPrice("");
         setDeadline("");
-        // Refresh data (TanStack Router way is to invalidate or navigate)
-        navigate({ to: '/dashboard', replace: true });
+        queryClient.invalidateQueries({ queryKey: ['negotiations'] });
       } else {
         const data = await response.json();
         setError(data.message || "Failed to create negotiation.");

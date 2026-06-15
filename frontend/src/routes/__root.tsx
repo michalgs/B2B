@@ -1,9 +1,13 @@
 import React from 'react'
-import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 import appCss from '../styles.css?url'
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient
+}>()({
   head: () => ({
     meta: [
       {
@@ -28,9 +32,20 @@ export const Route = createRootRoute({
       },
     ],
   }),
-  component: () => <Outlet />,
+  component: RootComponent,
   shellComponent: RootDocument,
 })
+
+function RootComponent() {
+  const { queryClient } = Route.useRouteContext()
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+      <ReactQueryDevtools buttonPosition="bottom-right" />
+    </QueryClientProvider>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (

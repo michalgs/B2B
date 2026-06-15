@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate, Link, useRouter } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '#/components/ui/card'
 import { Separator } from '#/components/ui/separator'
@@ -7,6 +7,7 @@ import { Field, FieldLabel, FieldTitle } from '#/components/ui/field'
 import { cn, getApiBaseUrl } from '#/lib/utils'
 import Logo from '#/components/Logo'
 import { useState, useEffect } from 'react'
+import { queryOptions, useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -30,42 +31,37 @@ interface NegotiationDetail {
   shards: ContractShard[];
 }
 
+const userQueryOptions = queryOptions({
+  queryKey: ['user', 'me'],
+  queryFn: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Unauthorized');
+    return response.json();
+  },
+})
+
+const negotiationQueryOptions = (id: string) => queryOptions({
+  queryKey: ['negotiation', id],
+  queryFn: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/contracts/${id}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Negotiation not found');
+    return response.json() as Promise<NegotiationDetail>;
+  },
+  refetchInterval: 15000,
+})
+
 export const Route = createFileRoute('/negotiations/$id')({
-  beforeLoad: async ({ params }) => {
-    if (typeof window === 'undefined') {
-      return {
-        user: { firstName: '', lastName: '', email: '', company: null },
-        negotiation: { uuid: '', senderCompanyName: '', recipientCompanyName: '', status: '', updatedAt: '', shards: [] },
-        isPlaceholder: true,
-      }
-    }
-
+  loader: async ({ context: { queryClient }, params: { id } }) => {
     try {
-      const userResponse = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-        credentials: 'include',
-      });
-      if (!userResponse.ok) {
-        throw redirect({ to: '/login' })
-      }
-      const user = await userResponse.json();
-
-      const negotiationResponse = await fetch(`${API_BASE_URL}/api/v1/contracts/${params.id}`, {
-        credentials: 'include',
-      });
-      if (!negotiationResponse.ok) {
-        throw redirect({ to: '/dashboard' })
-      }
-      const negotiation = await negotiationResponse.json();
-
-      return {
-        user,
-        negotiation: negotiation as NegotiationDetail,
-        isPlaceholder: false,
-      }
-    } catch (error) {
-      if (error instanceof Error && 'to' in error) {
-        throw error;
-      }
+      await Promise.all([
+        queryClient.ensureQueryData(userQueryOptions),
+        queryClient.ensureQueryData(negotiationQueryOptions(id)),
+      ])
+    } catch (e) {
       throw redirect({ to: '/login' })
     }
   },
@@ -73,7 +69,11 @@ export const Route = createFileRoute('/negotiations/$id')({
 })
 
 function NegotiationView() {
-  const { user, negotiation, isPlaceholder } = Route.useRouteContext();
+  const { id } = Route.useParams();
+  const queryClient = useQueryClient();
+  const { data: user } = useSuspenseQuery(userQueryOptions);
+  const { data: negotiation } = useSuspenseQuery(negotiationQueryOptions(id));
+  
   const navigate = useNavigate();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +82,7 @@ function NegotiationView() {
   const [selectedShardUuid, setSelectedShardUuid] = useState<string | null>(null);
   const [shardsCount, setShardsCount] = useState(0);
 
-  // Counter offer form state - initialized to empty and synced via useEffect
+  // Counter offer form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("0");
@@ -90,24 +90,14 @@ function NegotiationView() {
   const [deadline, setDeadline] = useState("");
 
   useEffect(() => {
-    if (isPlaceholder && typeof window !== 'undefined') {
-      console.log('[NegotiationView] Placeholder detected on client, invalidating to fetch real data');
-      router.invalidate();
-    }
-  }, [isPlaceholder, router]);
-
-  useEffect(() => {
     if (negotiation?.shards?.length > 0) {
       const latest = negotiation.shards[negotiation.shards.length - 1];
       
-      // Auto-select newest shard if a new one is added or if nothing is selected
       if (negotiation.shards.length > shardsCount || !selectedShardUuid) {
         setSelectedShardUuid(latest.uuid);
         setShardsCount(negotiation.shards.length);
       }
       
-      // Only sync form state if it's the latest shard we're looking at
-      // and we're not currently submitting a counter offer
       if (!isSubmitting) {
         setTitle(latest.title || "");
         setDescription(latest.description || "");
@@ -123,19 +113,6 @@ function NegotiationView() {
       }
     }
   }, [negotiation, selectedShardUuid, shardsCount, isSubmitting]);
-
-  if (isPlaceholder) {
-    return (
-      <main className="page-wrap px-4 py-12 flex flex-col items-center">
-        <div className='w-full lg:w-4/5 xl:w-3/4'>
-           <Logo />
-           <div className="mt-8 p-8 text-center border rounded-lg bg-muted/20">
-             <h3 className="text-xl font-semibold text-muted-foreground animate-pulse">Accessing Secure Dossier...</h3>
-           </div>
-        </div>
-      </main>
-    );
-  }
 
   if (!negotiation || !negotiation.shards || negotiation.shards.length === 0) {
     return (
@@ -182,6 +159,7 @@ function NegotiationView() {
       });
 
       if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ['negotiation', id] });
         navigate({ to: '/dashboard' });
       } else {
         const data = await response.json();
@@ -216,7 +194,7 @@ function NegotiationView() {
 
       if (response.ok) {
         setShowCounterForm(false);
-        router.invalidate();
+        queryClient.invalidateQueries({ queryKey: ['negotiation', id] });
       } else {
         const data = await response.json();
         setError(data.message || "Failed to send counter offer.");
