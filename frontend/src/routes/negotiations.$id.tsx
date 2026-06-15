@@ -250,12 +250,12 @@ function NegotiationView() {
           <Button variant="outline" onClick={() => navigate({ to: '/dashboard' })}>Back to Dashboard</Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           {/* Left Column: Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2">
             {!showCounterForm ? (
-              <Card className="box-shadow-2xl">
-                <CardHeader className="border-b">
+              <Card className="box-shadow-2xl h-full flex flex-col max-h-[600px]">
+                <CardHeader className="border-b shrink-0">
                   <div className="flex justify-between items-center">
                     <div>
                       <CardTitle>
@@ -279,7 +279,7 @@ function NegotiationView() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-6">
+                <CardContent className="pt-6 space-y-6 flex-1 overflow-y-auto">
                   <div>
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Title</h4>
                     <p className="text-xl font-semibold">{viewedShard?.title || 'Untitled'}</p>
@@ -306,12 +306,12 @@ function NegotiationView() {
                   </div>
                 </CardContent>
                 {error && (
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 shrink-0">
                     <p className="text-destructive text-sm font-medium p-4 bg-destructive/10 rounded-md">{error}</p>
                   </CardContent>
                 )}
                 {isViewingLatest && (negotiation.status === 'INVITED' || negotiation.status === 'NEGOTIATING') && user.company?.name !== latestShard.createdByName && (
-                  <CardFooter className="border-t bg-muted/30 flex justify-end gap-4 py-4">
+                  <CardFooter className="border-t bg-muted/30 flex justify-end gap-4 py-4 shrink-0">
                     <Button
                       variant="destructive"
                       size="lg"
@@ -333,13 +333,13 @@ function NegotiationView() {
 
               </Card>
             ) : (
-              <Card className="box-shadow-2xl">
-                <CardHeader>
+              <Card className="box-shadow-2xl h-full flex flex-col max-h-[600px]">
+                <CardHeader className="shrink-0">
                   <CardTitle>Counter Offer</CardTitle>
                   <CardDescription>Propose new terms for this negotiation</CardDescription>
                 </CardHeader>
-                <form onSubmit={handleCounterOffer}>
-                  <CardContent className="space-y-4 px-4">
+                <form onSubmit={handleCounterOffer} className="flex-1 flex flex-col overflow-hidden">
+                  <CardContent className="space-y-4 px-4 flex-1 overflow-y-auto">
                     <Field>
                       <FieldLabel>
                         <FieldTitle>Title</FieldTitle>
@@ -377,11 +377,11 @@ function NegotiationView() {
                       </Field>
                     </div>
 
-                    <Field>
-                      <FieldLabel>
+                    <Field className="flex-1 flex flex-col">
+                      <FieldLabel className="flex-1 flex flex-col">
                         <FieldTitle>Description</FieldTitle>
                         <textarea
-                          className="w-full min-h-[150px] px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full flex-1 min-h-[150px] px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                           required
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
@@ -390,7 +390,7 @@ function NegotiationView() {
                     </Field>
                     {error && <p className="text-destructive text-sm font-medium">{error}</p>}
                   </CardContent>
-                  <CardFooter className="justify-end gap-3 mt-4">
+                  <CardFooter className="justify-end gap-3 mt-4 shrink-0">
                     <Button variant="ghost" type="button" onClick={() => setShowCounterForm(false)}>Cancel</Button>
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? "Sending..." : "Send Counter Offer"}
@@ -402,13 +402,13 @@ function NegotiationView() {
           </div>
 
           {/* Right Column: Versions */}
-          <div className="space-y-6">
-            <Card className="box-shadow-lg sticky top-8">
-              <CardHeader className="border-b">
+          <div>
+            <Card className="box-shadow-lg sticky top-8 h-full flex flex-col max-h-[600px]">
+              <CardHeader className="border-b shrink-0">
                 <CardTitle className="text-lg">History</CardTitle>
                 <CardDescription>Previous iterations</CardDescription>
               </CardHeader>
-              <CardContent className="p-0 max-h-[600px] overflow-y-auto">
+              <CardContent className="p-0 overflow-y-auto flex-1">
                 <div className="flex flex-col">
                   {negotiation.shards.slice().reverse().map((shard, index) => (
                     <div 
