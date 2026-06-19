@@ -7,6 +7,19 @@ on:
     branches: [ "main" ]
 
 jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependancy-path: ./frontend/package-lock.json
+      - run: npm ci
+      - run: npx eslint .
+
   cypress-run:
     runs-on: ubuntu-latest
     env:
