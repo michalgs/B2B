@@ -71,11 +71,16 @@ All endpoints are prefixed with `/api/v1`. This document contains all necessary 
 }
 ```
 
-### PATCH `/companies/my`
-**Description**: Scenario #4. Updates profile customization fields.
+### PATCH `/companies/me`
+**Description**: Scenario #4. Updates profile customization fields and basic company info.
 **Request Body**:
 ```json
-{ "description": "New company description", "logoUrl": "https://new-url.com/logo.png" }
+{ 
+  "name": "New Name",
+  "address": "New Address",
+  "description": "New company description", 
+  "logoUrl": "https://new-url.com/logo.png" 
+}
 ```
 **Response**: `200 OK`
 
