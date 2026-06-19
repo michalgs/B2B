@@ -2,6 +2,7 @@ package com.example.b2b.controller;
 
 import com.example.b2b.dto.ContractCreateRequest;
 import com.example.b2b.dto.ContractResponse;
+import com.example.b2b.dto.CounterOfferRequest;
 import com.example.b2b.model.ContractStatus;
 import com.example.b2b.model.User;
 import com.example.b2b.service.ContractService;
@@ -25,6 +26,16 @@ public class ContractController {
     @GetMapping
     public Map<String, List<ContractResponse>> getContracts(@AuthenticationPrincipal User user) {
         return Map.of("content", contractService.getUserContracts(user));
+    }
+
+    @GetMapping("/{uuid}")
+    public ContractResponse getContract(@AuthenticationPrincipal User user, @PathVariable UUID uuid) {
+        return contractService.getContractByUuid(uuid, user);
+    }
+
+    @PostMapping("/{uuid}/counter-offer")
+    public ContractResponse counterOffer(@AuthenticationPrincipal User user, @PathVariable UUID uuid, @Valid @RequestBody CounterOfferRequest request) {
+        return contractService.counterOffer(uuid, request, user);
     }
 
     @PostMapping

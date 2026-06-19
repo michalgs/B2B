@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -18,6 +19,7 @@ public class ContractResponse {
     private ContractStatus status;
     private String senderCompanyName;
     private String recipientCompanyName;
-    private String initialOffering; // Mapping title/price for backward compatibility or as per contract
+    private String initialOffering; 
     private LocalDateTime updatedAt;
+    private List<ShardResponse> shards;
 }

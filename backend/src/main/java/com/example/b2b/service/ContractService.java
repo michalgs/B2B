@@ -2,6 +2,7 @@ package com.example.b2b.service;
 
 import com.example.b2b.dto.ContractCreateRequest;
 import com.example.b2b.dto.ContractResponse;
+import com.example.b2b.dto.CounterOfferRequest;
 import com.example.b2b.mapper.ContractMapper;
 import com.example.b2b.model.*;
 import com.example.b2b.repository.CompanyRepository;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,18 +33,71 @@ public class ContractService {
         Contract contract = contractRepository.findByUuid(uuid)
                 .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
 
-        // Only the recipient can accept or reject in this simplified status flow
-        if (!contract.getRecipient().getUuid().equals(company.getUuid())) {
-            throw new IllegalStateException("Only the recipient can change the contract status");
+        if (contract.getStatus() == ContractStatus.ACCEPTED || contract.getStatus() == ContractStatus.REJECTED) {
+            throw new IllegalStateException("Negotiation is already closed");
         }
 
-        if (contract.getStatus() != ContractStatus.INVITED) {
-            throw new IllegalStateException("Negotiation is already resolved or in progress");
+        // Get the latest shard to determine who is the recipient of the current offer
+        ContractShard latestShard = contract.getShards().stream()
+                .max(Comparator.comparing(ContractShard::getCreatedAt))
+                .orElseThrow(() -> new IllegalStateException("Contract has no shards"));
+
+        // The person who can accept/reject is the one who DID NOT create the latest shard
+        if (latestShard.getCreatedBy().getUuid().equals(company.getUuid())) {
+            throw new IllegalStateException("You cannot accept or reject your own offer");
         }
 
         contract.setStatus(newStatus);
         contract = contractRepository.save(contract);
         log.info("Contract {} status updated to {} by company {}", contract.getUuid(), newStatus, company.getUuid());
+
+        return contractMapper.toResponse(contract);
+    }
+
+    @Transactional
+    public ContractResponse counterOffer(UUID uuid, CounterOfferRequest request, User user) {
+        Company company = user.getCompany();
+        Contract contract = contractRepository.findByUuid(uuid)
+                .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
+
+        if (!contract.getSender().getUuid().equals(company.getUuid()) &&
+                !contract.getRecipient().getUuid().equals(company.getUuid())) {
+            throw new IllegalArgumentException("You are not authorized to counter-offer on this contract");
+        }
+
+        if (contract.getStatus() == ContractStatus.ACCEPTED || contract.getStatus() == ContractStatus.REJECTED) {
+            throw new IllegalStateException("Cannot counter-offer on a closed contract");
+        }
+
+        ContractShard shard = ContractShard.builder()
+                .uuid(UUID.randomUUID())
+                .contract(contract)
+                .createdBy(company)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .price(request.getPrice())
+                .currency(request.getCurrency())
+                .deadline(request.getDeadline())
+                .build();
+
+        contract.getShards().add(shard);
+        contract.setStatus(ContractStatus.NEGOTIATING);
+        contract = contractRepository.save(contract);
+        log.info("Counter offer added to contract: {} by company {}", contract.getUuid(), company.getUuid());
+
+        return contractMapper.toResponse(contract);
+    }
+
+    @Transactional(readOnly = true)
+    public ContractResponse getContractByUuid(UUID uuid, User user) {
+        Company company = user.getCompany();
+        Contract contract = contractRepository.findByUuid(uuid)
+                .orElseThrow(() -> new IllegalArgumentException("Contract not found"));
+
+        if (!contract.getSender().getUuid().equals(company.getUuid()) &&
+                !contract.getRecipient().getUuid().equals(company.getUuid())) {
+            throw new IllegalArgumentException("You are not authorized to view this contract");
+        }
 
         return contractMapper.toResponse(contract);
     }

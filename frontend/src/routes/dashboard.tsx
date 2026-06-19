@@ -1,10 +1,10 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '#/components/ui/card'
 import { Separator } from '#/components/ui/separator'
-import { Field, FieldLabel, FieldTitle, FieldDescription } from '#/components/ui/field'
+import { Field, FieldLabel, FieldTitle } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
-import { cn } from '#/lib/utils'
+import { cn, getApiBaseUrl } from '#/lib/utils'
 import Logo from '#/components/Logo'
 import {
   Select,
@@ -13,9 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { queryOptions, useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = getApiBaseUrl();
 
 interface Negotiation {
   uuid: string;
@@ -31,48 +32,61 @@ interface Company {
   name: string;
 }
 
+const userQueryOptions = queryOptions({
+  queryKey: ['user', 'me'],
+  queryFn: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Unauthorized');
+    return response.json();
+  },
+})
+
+const negotiationsQueryOptions = queryOptions({
+  queryKey: ['negotiations'],
+  queryFn: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/contracts`, {
+      credentials: 'include',
+    });
+    const data = response.ok ? await response.json() : [];
+    // Handle both flat list and wrapped content (just in case)
+    return (Array.isArray(data) ? data : data.content || []) as Negotiation[];
+  },
+})
+
+const companiesQueryOptions = queryOptions({
+  queryKey: ['companies'],
+  queryFn: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/companies`, {
+      credentials: 'include',
+    });
+    return (response.ok ? await response.json() : []) as Company[];
+  },
+})
+
 export const Route = createFileRoute('/dashboard')({
-  beforeLoad: async () => {
+  loader: async ({ context: { queryClient } }) => {
     try {
-      const userResponse = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-        credentials: 'include',
-      });
-      if (!userResponse.ok) {
-        throw redirect({
-          to: '/login',
-        })
-      }
-      const user = await userResponse.json();
-
-      const negotiationsResponse = await fetch(`${API_BASE_URL}/api/v1/contracts`, {
-        credentials: 'include',
-      });
-      const data = negotiationsResponse.ok ? await negotiationsResponse.json() : { content: [] };
-
-      const companiesResponse = await fetch(`${API_BASE_URL}/api/v1/companies`, {
-        credentials: 'include',
-      });
-      const companies = companiesResponse.ok ? await companiesResponse.json() : [];
-
-      return {
-        user,
-        negotiations: (data.content || []) as Negotiation[],
-        companies: companies as Company[],
-      }
-    } catch (error) {
-      if (error instanceof Error && 'to' in error) {
-        throw error;
-      }
-      throw redirect({
-        to: '/login',
-      })
+      await Promise.all([
+        queryClient.ensureQueryData(userQueryOptions),
+        queryClient.ensureQueryData(negotiationsQueryOptions),
+        queryClient.ensureQueryData(companiesQueryOptions),
+      ])
+    } catch (e) {
+      throw redirect({ to: '/login' })
     }
   },
   component: Dashboard,
 })
 
 function Dashboard() {
-  const { user, negotiations, companies } = Route.useRouteContext();
+  const queryClient = useQueryClient();
+  const { data: user } = useSuspenseQuery(userQueryOptions);
+  const { data: negotiations } = useSuspenseQuery(negotiationsQueryOptions);
+  console.log('negotiations', negotiations);
+  const { data: companies } = useSuspenseQuery(companiesQueryOptions);
+
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedNegotiation, setSelectedNegotiation] = useState<Negotiation | null>(null);
@@ -107,7 +121,7 @@ function Dashboard() {
 
       if (response.ok) {
         setSelectedNegotiation(null);
-        navigate({ to: '/dashboard', replace: true });
+        queryClient.invalidateQueries({ queryKey: ['negotiations'] });
       } else {
         const data = await response.json();
         setError(data.message || "Failed to update status.");
@@ -149,8 +163,7 @@ function Dashboard() {
         setDescription("");
         setPrice("");
         setDeadline("");
-        // Refresh data (TanStack Router way is to invalidate or navigate)
-        navigate({ to: '/dashboard', replace: true });
+        queryClient.invalidateQueries({ queryKey: ['negotiations'] });
       } else {
         const data = await response.json();
         setError(data.message || "Failed to create negotiation.");
@@ -193,7 +206,7 @@ function Dashboard() {
                     <div key={negotiation.uuid} data-test="negotiation-item">
                       <div
                         className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => setSelectedNegotiation(negotiation)}
+                        onClick={() => navigate({ to: '/negotiations/$id', params: { id: negotiation.uuid } })}
                       >
                         <div className="flex flex-col gap-1">
                           <span className="font-semibold text-base" data-test="negotiation-partner">
@@ -209,7 +222,7 @@ function Dashboard() {
                             "text-xs px-2 py-0.5 rounded-full border",
                             negotiation.status === "ACCEPTED" ? "bg-green-100 text-green-700 border-green-200" :
                               negotiation.status === "REJECTED" ? "bg-red-100 text-red-700 border-red-200" :
-                                negotiation.status === "INVITED" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                                negotiation.status === "INVITED" || negotiation.status === "NEGOTIATING" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
                                   "bg-blue-100 text-blue-700 border-blue-200"
                           )} data-test="negotiation-status">
                             {negotiation.status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
