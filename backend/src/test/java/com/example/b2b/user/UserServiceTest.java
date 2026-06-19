@@ -138,5 +138,3 @@ class UserServiceTest {
         assertThrows(AuthorizationException.class, () -> userService.login(loginRequest));
     }
 }
-
-
