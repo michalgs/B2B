@@ -4,7 +4,7 @@ import { Card, CardContent } from '#/components/ui/card'
 import { Field, FieldLabel, FieldDescription } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { CircleAlert, Upload, Trash2 } from 'lucide-react'
+import { CircleAlert } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export const Route = createFileRoute('/company-profile')({
@@ -21,13 +21,9 @@ function CompanyProfile() {
 
   // Form state
   const [companyName, setCompanyName] = useState("")
-  const [nip, setNip] = useState("")
   const [address, setAddress] = useState("")
   const [description, setDescription] = useState("")
-  const [website, setWebsite] = useState("")
-  const [email, setEmail] = useState("")
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
-  const [logoFile, setLogoFile] = useState<File | null>(null)
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isLoading, setIsLoading] = useState(true)
@@ -47,11 +43,8 @@ function CompanyProfile() {
           setUser(data)
           if (data.company) {
             setCompanyName(data.company.name || "")
-            setNip(data.company.nip || "")
             setAddress(data.company.address || "")
             setDescription(data.company.description || "")
-            setWebsite(data.company.website || "")
-            setEmail(data.company.email || "")
             setLogoUrl(data.company.logoUrl || null)
           }
         } else if (response.status === 401) {
@@ -68,28 +61,14 @@ function CompanyProfile() {
   }, [navigate])
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (!['image/svg+xml', 'image/png', 'image/jpeg'].includes(file.type)) {
-        setErrors({ logo: "Please upload SVG, PNG, or JPEG format" })
-        return
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors({ logo: "File size must be less than 5MB" })
-        return
-      }
-      setLogoFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setLogoUrl(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+    const url = e.target.value
+    if (url) {
+      setLogoUrl(url)
       setErrors({ ...errors, logo: "" })
     }
   }
 
-  const handleRemoveLogo = () => {
-    setLogoFile(null)
+  const handleClearLogo = () => {
     setLogoUrl(null)
   }
 
@@ -97,7 +76,6 @@ function CompanyProfile() {
     const newErrors: { [key: string]: string } = {}
 
     if (!companyName) newErrors.companyName = "Company name is required"
-    if (!nip) newErrors.nip = "NIP is required"
     if (!address) newErrors.address = "Address is required"
 
     setErrors(newErrors)
@@ -107,21 +85,19 @@ function CompanyProfile() {
     setSuccessMessage("")
 
     try {
-      const formData = new FormData()
-      formData.append('name', companyName)
-      formData.append('nip', nip)
-      formData.append('address', address)
-      formData.append('description', description)
-      formData.append('website', website)
-      formData.append('email', email)
-
-      if (logoFile) {
-        formData.append('logo', logoFile)
+      const payload = {
+        name: companyName,
+        address: address,
+        description: description,
+        logoUrl: logoUrl || undefined
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/companies/profile`, {
-        method: 'PUT',
-        body: formData,
+      const response = await fetch(`${API_BASE_URL}/api/v1/companies/me`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
         credentials: 'include',
       })
 
@@ -196,9 +172,9 @@ function CompanyProfile() {
         {/* Identity Section */}
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
           <div className='lg:col-span-1'>
-            <h3 className='text-sm font-bold uppercase tracking-widest text-foreground mb-2'>Identification Data</h3>
+            <h3 className='text-sm font-bold uppercase tracking-widest text-foreground mb-2'>Company Information</h3>
             <p className='text-xs text-secondary leading-relaxed'>
-              Basic legal information required for document generation and contracts.
+              Core information about your company used in contracts and negotiations.
             </p>
           </div>
           <div className='lg:col-span-2 space-y-6 bg-stone-50/50 p-6 rounded-sm border border-stone-200/30'>
@@ -214,43 +190,6 @@ function CompanyProfile() {
               {errors.companyName && <FieldDescription>{errors.companyName}</FieldDescription>}
             </Field>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-              <Field data-invalid={!!errors.nip}>
-                <FieldLabel htmlFor='nip' className='font-bold'>TAX ID (NIP)</FieldLabel>
-                <Input
-                  id='nip'
-                  type='text'
-                  placeholder='1234567890'
-                  value={nip}
-                  onChange={(e) => setNip(e.target.value)}
-                  maxLength={10}
-                />
-                {errors.nip && <FieldDescription>{errors.nip}</FieldDescription>}
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor='email' className='font-bold'>BILLING EMAIL</FieldLabel>
-                <Input
-                  id='email'
-                  type='email'
-                  placeholder='billing@company.com'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </Field>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-          <div className='lg:col-span-1'>
-            <h3 className='text-sm font-bold uppercase tracking-widest text-foreground mb-2'>Contact Information</h3>
-            <p className='text-xs text-secondary leading-relaxed'>
-              Primary contact points for system and operational communication.
-            </p>
-          </div>
-          <div className='lg:col-span-2 space-y-6 bg-stone-50/50 p-6 rounded-sm border border-stone-200/30'>
             <Field data-invalid={!!errors.address}>
               <FieldLabel htmlFor='address' className='font-bold'>HEADQUARTERS ADDRESS</FieldLabel>
               <textarea
@@ -263,21 +202,6 @@ function CompanyProfile() {
               />
               {errors.address && <FieldDescription>{errors.address}</FieldDescription>}
             </Field>
-
-            <Field>
-              <FieldLabel htmlFor='website' className='font-bold'>WEBSITE</FieldLabel>
-              <div className='flex items-center'>
-                <span className='text-secondary/50 mr-2 text-sm'>https://</span>
-                <Input
-                  id='website'
-                  type='text'
-                  placeholder='company.com'
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  className='flex-1'
-                />
-              </div>
-            </Field>
           </div>
         </div>
 
@@ -286,71 +210,47 @@ function CompanyProfile() {
           <div className='lg:col-span-1'>
             <h3 className='text-sm font-bold uppercase tracking-widest text-foreground mb-2'>Brand Assets</h3>
             <p className='text-xs text-secondary leading-relaxed'>
-              Your logo will be visible on all generated contracts and in the counterparty portal.
+              Your logo URL will be visible on all generated contracts and in the counterparty portal.
             </p>
           </div>
-          <div className='lg:col-span-2'>
-            <Card className='bg-white border-stone-200/50'>
-              <CardContent className='p-6 flex items-center gap-8'>
-                <div className='relative w-32 h-32 bg-stone-100 flex items-center justify-center rounded-sm border border-stone-200/50 overflow-hidden group'>
-                  {logoUrl ? (
-                    <>
-                      <img
-                        src={logoUrl}
-                        alt='Company logo'
-                        className='w-20 h-20 object-contain'
-                      />
-                      <div className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2'>
-                        <button
-                          type='button'
-                          onClick={handleRemoveLogo}
-                          className='p-2 bg-white rounded-sm hover:bg-stone-100 transition-colors'
-                        >
-                          <Trash2 className='w-4 h-4 text-destructive-primary' />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className='text-center'>
-                      <Upload className='w-6 h-6 text-stone-400 mx-auto mb-2' />
-                      <p className='text-xs text-stone-400'>No logo</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className='flex-1'>
-                  <h4 className='font-bold text-foreground mb-2'>Company Logo</h4>
-                  <p className='text-xs text-secondary mb-4'>
-                    Recommended format: SVG or PNG with high resolution (min. 512x512px).
-                  </p>
-                  <div className='flex gap-3'>
-                    <input
-                      type='file'
-                      id='logo-input'
-                      accept='.svg,.png,.jpg,.jpeg'
-                      onChange={handleLogoChange}
-                      className='hidden'
+          <div className='lg:col-span-2 space-y-6 bg-stone-50/50 p-6 rounded-sm border border-stone-200/30'>
+            <Field>
+              <FieldLabel htmlFor='logoUrl' className='font-bold'>LOGO URL</FieldLabel>
+              <Input
+                id='logoUrl'
+                type='text'
+                placeholder='https://example.com/logo.png'
+                value={logoUrl || ""}
+                onChange={handleLogoChange}
+              />
+              <FieldDescription>
+                Provide a direct URL to your company logo image (SVG, PNG, or JPEG)
+              </FieldDescription>
+              {logoUrl && (
+                <div className='mt-4 flex items-center gap-4'>
+                  <div className='w-20 h-20 bg-stone-100 rounded-sm border border-stone-200/50 flex items-center justify-center overflow-hidden'>
+                    <img
+                      src={logoUrl}
+                      alt='Company logo preview'
+                      className='w-full h-full object-contain'
+                      onError={() => setErrors({ ...errors, logoUrl: "Failed to load image from URL" })}
                     />
-                    <label htmlFor='logo-input'>
-                      <Button className='h-10 px-6' onClick={() => document.getElementById('logo-input')?.click()} type='button'>
-                        Change Logo
-                      </Button>
-                    </label>
-                    {logoUrl && (
-                      <Button
-                        variant='outline'
-                        className='h-10 px-6'
-                        onClick={handleRemoveLogo}
-                        type='button'
-                      >
-                        Remove
-                      </Button>
-                    )}
                   </div>
-                  {errors.logo && <FieldDescription className='mt-2'>{errors.logo}</FieldDescription>}
+                  <div>
+                    <p className='text-xs text-secondary mb-2'>Logo preview</p>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={handleClearLogo}
+                      type='button'
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+              {errors.logo && <FieldDescription className='text-destructive-primary'>{errors.logo}</FieldDescription>}
+            </Field>
           </div>
         </div>
 
