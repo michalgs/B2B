@@ -13,9 +13,9 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as CompanyProfileRouteImport } from './routes/company-profile'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as NegotiationsIdRouteImport } from './routes/negotiations.$id'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -37,11 +37,6 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CompanyProfileRoute = CompanyProfileRouteImport.update({
-  id: '/company-profile',
-  path: '/company-profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -52,73 +47,78 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NegotiationsIdRoute = NegotiationsIdRouteImport.update({
+  id: '/negotiations/$id',
+  path: '/negotiations/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/company-profile': typeof CompanyProfileRoute
   '/dashboard': typeof DashboardRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/negotiations/$id': typeof NegotiationsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/company-profile': typeof CompanyProfileRoute
   '/dashboard': typeof DashboardRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/negotiations/$id': typeof NegotiationsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/company-profile': typeof CompanyProfileRoute
   '/dashboard': typeof DashboardRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/negotiations/$id': typeof NegotiationsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
-    | '/company-profile'
     | '/dashboard'
     | '/landing'
     | '/login'
     | '/register'
+    | '/negotiations/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/company-profile'
     | '/dashboard'
     | '/landing'
     | '/login'
     | '/register'
+    | '/negotiations/$id'
   id:
     | '__root__'
     | '/'
     | '/about'
-    | '/company-profile'
     | '/dashboard'
     | '/landing'
     | '/login'
     | '/register'
+    | '/negotiations/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  CompanyProfileRoute: typeof CompanyProfileRoute
   DashboardRoute: typeof DashboardRoute
   LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  NegotiationsIdRoute: typeof NegotiationsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -151,13 +151,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/company-profile': {
-      id: '/company-profile'
-      path: '/company-profile'
-      fullPath: '/company-profile'
-      preLoaderRoute: typeof CompanyProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -172,17 +165,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/negotiations/$id': {
+      id: '/negotiations/$id'
+      path: '/negotiations/$id'
+      fullPath: '/negotiations/$id'
+      preLoaderRoute: typeof NegotiationsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  CompanyProfileRoute: CompanyProfileRoute,
   DashboardRoute: DashboardRoute,
   LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  NegotiationsIdRoute: NegotiationsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

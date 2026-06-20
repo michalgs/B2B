@@ -5,13 +5,14 @@ import { Field, FieldLabel, FieldDescription } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { CircleAlert } from 'lucide-react'
+import { getApiBaseUrl } from '#/lib/utils'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/login')({
   component: Login,
 });
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = getApiBaseUrl();
 
 function Login() {
   const navigate = useNavigate();
