@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '#/components/ui/card'
 import { Separator } from '#/components/ui/separator'
@@ -75,7 +75,6 @@ function NegotiationView() {
   const { data: negotiation } = useSuspenseQuery(negotiationQueryOptions(id));
   
   const navigate = useNavigate();
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showCounterForm, setShowCounterForm] = useState(false);

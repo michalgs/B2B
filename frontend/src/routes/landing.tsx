@@ -1,7 +1,4 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import Logo from '#/components/Logo'
-import { Button } from '#/components/ui/button'
-import { Card, CardContent } from '#/components/ui/card'
 
 export const Route = createFileRoute('/landing')({
   component: RouteComponent,
