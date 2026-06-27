@@ -17,6 +17,7 @@ function CompanyProfile() {
   const navigate = useNavigate();
 
   // User state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null)
 
   // Form state
