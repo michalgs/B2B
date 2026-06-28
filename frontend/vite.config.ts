@@ -3,7 +3,7 @@ import { devtools } from '@tanstack/devtools-vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
@@ -14,11 +14,11 @@ const config = defineConfig({
     devtools(),
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),
-    tanstackStart(),
+    TanStackRouterVite(),
     viteReact(),
   ],
   server: {
-    https: true,
+    https: {},
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
@@ -28,7 +28,7 @@ const config = defineConfig({
     }
   },
   preview: {
-    https: true,
+    https: {},
     proxy: {
       '/api': {
         target: 'http://backend:8080',

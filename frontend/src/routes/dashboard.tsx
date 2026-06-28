@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '#/components/ui/card'
 import { Separator } from '#/components/ui/separator'
@@ -53,6 +53,7 @@ const negotiationsQueryOptions = queryOptions({
     // Handle both flat list and wrapped content (just in case)
     return (Array.isArray(data) ? data : data.content || []) as Negotiation[];
   },
+  refetchInterval: 15000,
 })
 
 const companiesQueryOptions = queryOptions({
@@ -96,7 +97,7 @@ function Dashboard() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency] = useState("USD");
   const [deadline, setDeadline] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -270,20 +271,24 @@ function Dashboard() {
                       <Select
                         required
                         value={recipientCompanyUuid}
-                        onValueChange={setRecipientCompanyUuid}
+                        onValueChange={(val) => setRecipientCompanyUuid(val || "")}
                       >
                         <SelectTrigger className="w-full" data-test="recipient-company-select">
                           <SelectValue placeholder="Select a company">
                             {recipientCompanyUuid
-                              ? companies.find(c => c.uuid === recipientCompanyUuid)?.name
+                              ? (companies.find(c => c.uuid === recipientCompanyUuid)?.name || "")
                               : undefined}
                           </SelectValue>
-                        </SelectTrigger>                        <SelectContent>
-                          {companies.map(c => (
-                            <SelectItem key={c.uuid} value={c.uuid} data-test="company-option">
-                              {c.name}
-                            </SelectItem>
-                          ))}                        </SelectContent>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {companies
+                            .filter(c => c.uuid !== user.company?.uuid)
+                            .map(c => (
+                              <SelectItem key={c.uuid} value={c.uuid} data-test="company-option">
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
                       </Select>
                     </FieldLabel>
                   </Field>

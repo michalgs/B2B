@@ -6,7 +6,7 @@ import { Input } from '#/components/ui/input'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { CircleAlert } from 'lucide-react'
 import { getApiBaseUrl } from '#/lib/utils'
-import { useState, type ChangeEvent } from 'react'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/register')({
   component: Register,
