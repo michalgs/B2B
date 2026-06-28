@@ -2,7 +2,9 @@
 
 A B2B (Business-to-Business) platform designed to facilitate negotiations, company registrations, offering management, and counteroffers between different companies. 
 
-The application is built using a modern decoupled architecture with a Kotlin/Spring Boot backend and a React/TypeScript/Vite frontend, orchestrated with Docker.
+The application is built using a modern decoupled architecture with a Java/Spring Boot backend and a React/TypeScript/Vite frontend, orchestrated with Docker.
+
+![Architecture Diagram](diagrams/architecture.png)
 
 ---
 
